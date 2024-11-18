@@ -91,30 +91,5 @@ class Vision:
         Release the camera resource.
         """
         self.camera.release()
-
-# Main function to test the Vision class
-if __name__ == "__main__":
-    try:
-        vision = Vision(target_height=10)
-        vision.update()
-        matrix = vision.get_matrix()
-        print("Color Matrix:")
-        print(matrix)
-        # while True:
-        #     # Update the vision system
-        #     vision.update()
-
-        #     # Get the current matrix and display it
-        #     matrix = vision.get_matrix()
-        #     print("Color Matrix:")
-        #     print(matrix)
-
-        #     # Display the current image
-        #     cv2.imshow("Captured Image", vision.get_image())
-
-        #     # Quit with 'q' key
-        #     if cv2.waitKey(1) & 0xFF == ord('q'):
-        #         break
-    finally:
-        vision.release()
         cv2.destroyAllWindows()
+
