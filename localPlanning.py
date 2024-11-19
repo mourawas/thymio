@@ -81,16 +81,6 @@ class LocalPlanning:
                 # if the robot is still stuck, rotate it
                 thymioControl.rotate(90)
                 self.local_planning_map(prox_horizontal, speed, map, thymioControl, retry + 1)
-
-
-    def get_closest_pos(map, thymioControl):
-        # get the current position of the robot
-        pos = thymioControl.get_position()
-        # get the closest position in the map
-        for i in (-1, 0, 1):
-            for j in (-1, 0, 1):
-                if map[pos[0] + i][pos[1] + j] == 1:
-                    return (pos[0] + i, pos[1] + j)
         
             
         
