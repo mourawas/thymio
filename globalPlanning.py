@@ -63,7 +63,6 @@ class GlobalPlanning:
                                 grid[neighbor] = n
                                 # Add neighbor to new frontier
                                 new_frontier.append(neighbor)
-                                operation_count += 1
             if not new_frontier:
                 # No more cells to explore, and goal is unreachable
                 return None
