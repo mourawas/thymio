@@ -24,7 +24,7 @@ class GlobalPlanning:
         # Make obstacles bigger
         obstacles = []
         for cell in matrix:
-            if matrix[cell] == -1:
+            if cell == -1:
                 obstacles.append(cell)
         for obstacle in obstacles:
             if matrix[obstacle[0]-1, obstacle[1]] == 0:
