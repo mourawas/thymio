@@ -19,23 +19,31 @@ class GlobalPlanning:
         n = 0  # Distance from start
         grid = np.full_like(matrix, -4)  # Initialize grid with -4 (unmarked)
         current = None  # Current cell in path
-        # Make obstacles bigger
-        obstacles = []
         path = []
 
-        for x in range(10):
-            for y in range(10):
+        # Make obstacles bigger
+        obstacles = []
+        for x in range(grid.shape[0]):
+            for y in range(grid.shape[1]):
                 if matrix[x, y] == -1:
                     obstacles.append((x, y))
         for obstacle in obstacles:
             if matrix[obstacle[0]-1, obstacle[1]] == 0:
-                matrix[obstacle[0]-1:obstacle[0]-5, obstacle[1]] = -1
+                for x in range(5):
+                    if 0 <= obstacle[0] - x:
+                        matrix[obstacle[0] - x, obstacle[1]] = -1
             if matrix[obstacle[0]+1, obstacle[1]] == 0:
-                matrix[obstacle[0]+1:obstacle[0]+5, obstacle[1]] = -1
+                for x in range(5):
+                    if obstacle[0] + x < grid.shape[0]:
+                        matrix[obstacle[0] + x, obstacle[1]] = -1
             if matrix[obstacle[0], obstacle[1]-1] == 0:
-                matrix[obstacle[0], obstacle[1]-1:obstacle[1]-5] = -1
+                for y in range(5):
+                    if 0 <= obstacle[1] - y:
+                        matrix[obstacle[0], obstacle[1] - y] = -1
             if matrix[obstacle[0], obstacle[1]+1] == 0:
-                matrix[obstacle[0], obstacle[1]+1:obstacle[1]+5] = -1
+                 for y in range(5):
+                    if obstacle[1] + y <= grid.shape[1]:
+                        matrix[obstacle[0], obstacle[1] + y] = -1
                 
         # Mark the start cell with n
         grid[start] = n
