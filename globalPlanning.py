@@ -66,7 +66,7 @@ class GlobalPlanning:
                                 new_frontier.append(neighbor)
             if not new_frontier:
                 # No more cells to explore, and goal is unreachable
-                return None
+                return None, matrix
             frontier = new_frontier
     
         # Reconstruct the path
@@ -90,10 +90,10 @@ class GlobalPlanning:
                         
             if next_cell is None:
                 # No path found
-                return None
+                return None, matrix
             # Append next_cell to path
             path.append(next_cell)
             current = next_cell
         # Reverse the path
         path.reverse()
-        return path
+        return path, matrix
