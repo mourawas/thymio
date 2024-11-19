@@ -9,9 +9,8 @@ class GlobalPlanning:
         self.goal = []
         self.path = [] #Shortest path
         
-    #here is the function for the A* algortihm (extension of the dijkstra algorithm it's
-    #why it's called dijkstra).
-    def ext_dijkstra(self, matrix, start, goal):
+    #here is the function for the dijkstra algortihm
+    def dijkstra(self, matrix, start, goal):
         #If current goal equal old goal we don't do the algorithm
         #if self.goal == goal:
             #return self.path
@@ -85,9 +84,8 @@ class GlobalPlanning:
             next_cell = None
             for neighbor in neighbors:
                 if (0 <= neighbor[0] < grid.shape[0]) and (0 <= neighbor[1] < grid.shape[1]): 
-                    if grid[neighbor] >=0 and grid[neighbor] < min_n:
-                        #The two absolut value is for the extension of the dijkstra algorithm
-                        min_n = grid[neighbor] + abs(neighbor[0] - goal[0]) + abs(neighbor[1] - goal[1])
+                    if grid[neighbor] >= 0 and grid[neighbor] < min_n:
+                        min_n = grid[neighbor]
                         next_cell = neighbor
                         
             if next_cell is None:
