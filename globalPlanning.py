@@ -22,6 +22,8 @@ class GlobalPlanning:
         current = None  # Current cell in path
         # Make obstacles bigger
         obstacles = []
+        path = []
+
         for x in range(10):
             for y in range(10):
                 if matrix[x, y] == -1:
@@ -70,8 +72,8 @@ class GlobalPlanning:
     
         # Reconstruct the path
         current = goal
-        self.path.append(current)
-        while current != self.start:
+        path.append(current)
+        while current != start:
             neighbors = [
                 (current[0]-1, current[1]),  # Up
                 (current[0]+1, current[1]),  # Down
@@ -92,8 +94,8 @@ class GlobalPlanning:
                 # No path found
                 return None
             # Append next_cell to path
-            self.path.append(next_cell)
+            path.append(next_cell)
             current = next_cell
         # Reverse the path
-        self.path.reverse()
-        return self.path
+        path.reverse()
+        return path
