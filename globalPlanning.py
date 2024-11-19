@@ -11,7 +11,7 @@ class GlobalPlanning:
         
     #here is the function for the A* algortihm (extension of the dijkstra algorithm it's
     #why it's called dijkstra).
-    def ext_dijkstra(matrix, start, goal):
+    def ext_dijkstra(self, matrix, start, goal):
         #If current goal equal old goal we don't do the algorithm
         #if self.goal == goal:
             #return self.path
