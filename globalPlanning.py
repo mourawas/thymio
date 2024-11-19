@@ -2,7 +2,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 class GlobalPlanning:
-    
     def __inite__(self):
         self.magnification = 5
         self.map = []
@@ -29,13 +28,13 @@ class GlobalPlanning:
                     obstacles.append((x, y))
         for obstacle in obstacles:
             if matrix[obstacle[0]-1, obstacle[1]] == 0:
-                matrix[obstacle[0]-1:obstacle[0]-self.magnification, obstacle[1]] = -1
+                matrix[obstacle[0]-1:obstacle[0]-5, obstacle[1]] = -1
             if matrix[obstacle[0]+1, obstacle[1]] == 0:
-                matrix[obstacle[0]+1:obstacle[0]+self.magnification, obstacle[1]] = -1
+                matrix[obstacle[0]+1:obstacle[0]+5, obstacle[1]] = -1
             if matrix[obstacle[0], obstacle[1]-1] == 0:
-                matrix[obstacle[0], obstacle[1]-1:obstacle[1]-self.magnification] = -1
+                matrix[obstacle[0], obstacle[1]-1:obstacle[1]-5] = -1
             if matrix[obstacle[0], obstacle[1]+1] == 0:
-                matrix[obstacle[0], obstacle[1]+1:obstacle[1]+self.magnification] = -1
+                matrix[obstacle[0], obstacle[1]+1:obstacle[1]+5] = -1
                 
         # Mark the start cell with n
         grid[start] = n
