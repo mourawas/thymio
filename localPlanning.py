@@ -1,5 +1,5 @@
 import numpy as np
-import math
+import matplotlib.pyplot as plt
 
 class LocalPlanning:
     def __init__(self, map):
