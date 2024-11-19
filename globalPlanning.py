@@ -1,5 +1,5 @@
 import numpy as np
-import mat
+import matplotlib.pyplot as plt
 
 class GlobalPlanning:
     
@@ -14,8 +14,8 @@ class GlobalPlanning:
     #why it's called dijkstra).
     def ext_dijkstra(self, matrix, start, goal):
         #If current goal equal old goal we don't do the algorithm
-        if self.goal == goal:
-            return self.path
+        #if self.goal == goal:
+            #return self.path
             
         # Initialize variables
         self.map = matrix
@@ -101,21 +101,3 @@ class GlobalPlanning:
         # Reverse the path
         self.path.reverse()
         return self.path
-    
-    #need to put this in the main code
-
-    GlobalPlanning.__inite__()
-    #search the start and the goal
-    for cell in matrix:
-        if matrix[cell] == -2:
-            start = cell
-            break
-    for cell in matrix:
-        if matrix[cell] == -3:
-            goal = cell
-            break
-            
-    GlobalPlanning.ext_djikstra(matrix, start, goal)
-    
-    if path == None:
-        print("No path found. Thymio cannot going to the goal, please reconsider the environment.")
