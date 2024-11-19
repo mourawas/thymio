@@ -18,34 +18,31 @@ class GlobalPlanning:
             #return self.path
             
         # Initialize variables
-        self.map = matrix
-        self.start = start
-        self.goal = goal
         n = 0  # Distance from start
-        grid = np.full_like(self.map, -4)  # Initialize grid with -2 (unmarked)
+        grid = np.full_like(matrix, -4)  # Initialize grid with -2 (unmarked)
         current = None  # Current cell in path
         # Make obstacles bigger
         obstacles = []
-        for cell in self.map:
-            if self.map[cell] == -1:
+        for cell in matrix:
+            if matrix[cell] == -1:
                 obstacles.append(cell)
         for obstacle in obstacles:
-            if self.map[obstacle[0]-1, obstacle[1]] == 0:
-                self.map[obstacle[0]-1:obstacle[0]-self.magnification, obstacle[1]] = -1
-            if self.map[obstacle[0]+1, obstacle[1]] == 0:
-                self.map[obstacle[0]+1:obstacle[0]+self.magnification, obstacle[1]] = -1
-            if self.map[obstacle[0], obstacle[1]-1] == 0:
-                self.map[obstacle[0], obstacle[1]-1:obstacle[1]-self.magnification] = -1
-            if self.map[obstacle[0], obstacle[1]+1] == 0:
-                self.map[obstacle[0], obstacle[1]+1:obstacle[1]+self.magnification] = -1
+            if matrix[obstacle[0]-1, obstacle[1]] == 0:
+                matrix[obstacle[0]-1:obstacle[0]-self.magnification, obstacle[1]] = -1
+            if matrix[obstacle[0]+1, obstacle[1]] == 0:
+                matrix[obstacle[0]+1:obstacle[0]+self.magnification, obstacle[1]] = -1
+            if matrix[obstacle[0], obstacle[1]-1] == 0:
+                matrix[obstacle[0], obstacle[1]-1:obstacle[1]-self.magnification] = -1
+            if matrix[obstacle[0], obstacle[1]+1] == 0:
+                matrix[obstacle[0], obstacle[1]+1:obstacle[1]+self.magnification] = -1
                 
         # Mark the start cell with n
-        grid[self.start] = n
+        grid[start] = n
     
         # Initialize a list to keep track of the frontier cells
-        frontier = [self.start]
+        frontier = [start]
     
-        while grid[self.goal] == -4:
+        while grid[goal] == -4:
             n += 1
             new_frontier = []
             # For each cell in the current frontier
@@ -61,7 +58,7 @@ class GlobalPlanning:
                     # Check if neighbor is within bounds and 
                     if (0 <= neighbor[0] < grid.shape[0]) and (0 <= neighbor[1] < grid.shape[1]):# Check if neighbor is within bounds
                         if grid[neighbor] == -4: # Unmarked cell  
-                            if Map[neighbor] != -1: # Not an obstacle
+                            if matrix[neighbor] != -1: # Not an obstacle
                                 # Mark neighbor with n
                                 grid[neighbor] = n
                                 # Add neighbor to new frontier
@@ -73,7 +70,7 @@ class GlobalPlanning:
             frontier = new_frontier
     
         # Reconstruct the path
-        current = self.goal
+        current = goal
         self.path.append(current)
         while current != self.start:
             neighbors = [
