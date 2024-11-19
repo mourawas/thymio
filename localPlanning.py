@@ -5,7 +5,7 @@ class LocalPlanning:
     def __init__(self, map):
         self.map = map
         self.distances = []
-        self.weights = [0.03, 0.05, 0.5, 0.05, 0.03]
+        self.weights = [6, 4, -2, -6, -8]
         self.maxValue = 4300
         self.thresholds = [3200, 3000, 3000, 3000, 3200]
         self.speed = [0, 0]
@@ -56,5 +56,41 @@ class LocalPlanning:
         
         return self.speed
     
-    def local_planning_map(self, prox_horizontal, speed, map):
+    def local_planning_map(self, prox_horizontal, speed, map, thymioControl, retry = 0):
+        turn = None
+        # get the current speed
+        self.speed = speed
+        
+        # edit the current speed based on the proximity sensor readings
+        for i in range (0, 5):
+            speed[0] += prox_horizontal[i] * self.weights[i] // 100
+            speed[1] += prox_horizontal[i] * self.weights[i] // 100
+
+        # move with the current speed for a certain amount of time
+        i = 0
+        while i < 10 and thymioControl.is_obstacle_detected():
+            thymioControl.move(speed)
+
+        if thymioControl.is_obstacle_detected():
+            if retry < 3:
+                # if the robot is stuck, try to move in the opposite direction
+                speed[0] = -speed[0]
+                speed[1] = -speed[1]
+                self.local_planning_map(prox_horizontal, speed, map, thymioControl, retry + 1)
+            else:
+                # if the robot is still stuck, rotate it
+                thymioControl.rotate(90)
+                self.local_planning_map(prox_horizontal, speed, map, thymioControl, retry + 1)
+
+
+    def get_closest_pos(map, thymioControl):
+        # get the current position of the robot
+        pos = thymioControl.get_position()
+        # get the closest position in the map
+        for i in (-1, 0, 1):
+            for j in (-1, 0, 1):
+                if map[pos[0] + i][pos[1] + j] == 1:
+                    return (pos[0] + i, pos[1] + j)
+        
+            
         
