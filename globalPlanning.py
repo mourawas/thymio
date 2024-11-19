@@ -23,9 +23,10 @@ class GlobalPlanning:
         current = None  # Current cell in path
         # Make obstacles bigger
         obstacles = []
-        for cell in matrix:
-            if cell == -1:
-                obstacles.append(cell)
+        for x in range(10):
+            for y in range(10):
+                if matrix[x, y] == -1:
+                    obstacles.append((x, y))
         for obstacle in obstacles:
             if matrix[obstacle[0]-1, obstacle[1]] == 0:
                 matrix[obstacle[0]-1:obstacle[0]-self.magnification, obstacle[1]] = -1
