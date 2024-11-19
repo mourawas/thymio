@@ -31,7 +31,7 @@ class GlobalPlanning:
                 obstacles.append(cell)
         for obstacle in obstacles:
             if self.map[obstacle[0]-1, obstacle[1]] == 0:
-                self.ap[obstacle[0]-1:obstacle[0]-self.magnification, obstacle[1]] = -1
+                self.map[obstacle[0]-1:obstacle[0]-self.magnification, obstacle[1]] = -1
             if self.map[obstacle[0]+1, obstacle[1]] == 0:
                 self.map[obstacle[0]+1:obstacle[0]+self.magnification, obstacle[1]] = -1
             if self.map[obstacle[0], obstacle[1]-1] == 0:
