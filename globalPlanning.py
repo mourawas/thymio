@@ -58,10 +58,14 @@ class GlobalPlanning:
             for cell in frontier:
                 # Get neighbors of the cell (up, down, left, right)
                 neighbors = [
-                    (cell[0]-1, cell[1]),  # Up
-                    (cell[0]+1, cell[1]),  # Down
-                    (cell[0], cell[1]-1),  # Left
-                    (cell[0], cell[1]+1)   # Right
+                    (cell[0]-1, cell[1]),   # Up
+                    (cell[0]+1, cell[1]),   # Down
+                    (cell[0], cell[1]-1),   # Left
+                    (cell[0], cell[1]+1),   # Right
+                    (cell[0]-1, cell[1]-1), # Up Left
+                    (cell[0]-1, cell[1]+1), # Up Right
+                    (cell[0]+1, cell[1]-1), # Down Left
+                    (cell[0]+1, cell[1]+1)  # Down Right
                 ]
                 for neighbor in neighbors:
                     # Check if neighbor is within bounds and 
@@ -82,10 +86,14 @@ class GlobalPlanning:
         path.append(current)
         while current != start:
             neighbors = [
-                (current[0]-1, current[1]),  # Up
-                (current[0]+1, current[1]),  # Down
-                (current[0], current[1]-1),  # Left
-                (current[0], current[1]+1)   # Right
+                (current[0]-1, current[1]),     # Up
+                (current[0]+1, current[1]),     # Down
+                (current[0], current[1]-1),     # Left
+                (current[0], current[1]+1),     # Right
+                (current[0]-1, current[1]-1),   # Up Left
+                (current[0]-1, current[1]+1),   # Up Right
+                (current[0]+1, current[1]-1),   # Down Left
+                (current[0]+1, current[1]+1)    # Down Right
             ]
             # Find the neighbor with the lowest mark (n value)
             min_n = grid[current]
