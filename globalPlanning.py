@@ -4,22 +4,22 @@ import math
 class GlobalPlanning:
     def __inite__(self):
         self.magnification = 5
-        self.map = []
-        self.start = (-1, -1)
-        self.goal = (-1, -1)
+        self.map = None
+        self.start = None
+        self.goal = None
         self.path = [] #Shortest path
         
     #here is the function for the dijkstra algortihm
-    def dijkstra(self, matrix, start, goal):
+    def dijkstra(self, matrix, startVision, goalVision):
         #If current goal equal old goal we don't do the algorithm
-        if self.goal == goal:
+        if self.goal == goalVision:
             return self.path
         
         
         # Initialize variables
         self.map = matrix
-        self.start = start
-        self.goal = goal
+        self.start = startVision
+        self.goal = goalVision
         n = 0  # Distance from start
         grid = np.full_like(self.map, -4)  # Initialize grid with -4 (unmarked)
         current = None  # Current cell in path
@@ -50,12 +50,12 @@ class GlobalPlanning:
                         self.map[obstacle[0], obstacle[1] + y] = -1
                 
         # Mark the start cell with n
-        grid[start] = n
+        grid[startVision] = n
     
         # Initialize a list to keep track of the frontier cells
-        frontier = [start]
+        frontier = [startVision]
     
-        while grid[goal] == -4:
+        while grid[goalVision] == -4:
             n += 1
             new_frontier = []
             # For each cell in the current frontier
@@ -86,9 +86,9 @@ class GlobalPlanning:
             frontier = new_frontier
     
         # Reconstruct the path
-        current = goal
+        current = goalVision
         path.append(current)
-        while current != start:
+        while current != startVision:
             neighbors = [
                 (current[0]-1, current[1]),     # Up
                 (current[0]+1, current[1]),     # Down
