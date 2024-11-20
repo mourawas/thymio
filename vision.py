@@ -104,8 +104,7 @@ class Vision:
 
                 dx = cx_blue - cx_green
                 dy = cy_blue - cy_green
-                angle = (np.degrees(np.arctan2(dy, dx)) - 90) % 360  # Adjusted calculation
-
+                angle = -(np.arctan2(dy, dx) + 2 * np.pi) % (2 * np.pi)  # Angle in radians normalized to [0, 2π)
                 start_x = (cx_blue + cx_green) // 2
                 start_y = (cy_blue + cy_green) // 2
 
