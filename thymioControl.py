@@ -1,6 +1,5 @@
 import numpy as np
 import math
-from kalman import Kalman
 
 class ThymioControl:
     def __init__(self):
@@ -14,7 +13,6 @@ class ThymioControl:
     def move(path):
         # Move the robot along the path
         # then remove the heading from the path after moving
-        kalman = Kalman()
         thymioangle = 0 #remove this line to take the real value of thymio angle
         thymiox = 3; thymioy = 3 #remove this line to take the real pos of the thymio
 
@@ -43,6 +41,7 @@ class ThymioControl:
 
     def getMotorSpeeds(self):
         # Get the motor speeds
+        return motor_left_speed, motor_right_speed
         pass
 
     def getProximity(self):
