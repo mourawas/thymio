@@ -5,14 +5,13 @@ class GlobalPlanning:
     def __inite__(self):
         self.magnification = 5
         self.map = []
-        self.start = ()
-        self.goal = ()
+        self.start = (-1, -1)
+        self.goal = (-1, -1)
         self.path = [] #Shortest path
         
     #here is the function for the dijkstra algortihm
     def dijkstra(self, matrix, start, goal):
         #If current goal equal old goal we don't do the algorithm
-        self.goal = (4,5)
         if self.goal == goal:
             return self.path
         
