@@ -12,6 +12,7 @@ class GlobalPlanning:
     #here is the function for the dijkstra algortihm
     def dijkstra(self, matrix, start, goal):
         #If current goal equal old goal we don't do the algorithm
+        self.goal = (4,5)
         if self.goal == goal:
             return self.path
         
