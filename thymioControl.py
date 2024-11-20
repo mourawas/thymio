@@ -22,29 +22,24 @@ class ThymioControl:
         pos = (thymiox, thymioy)
         #calculate the angle that the thymio need
         alpha = math.atan2((pos[1] - path[0][1]), (pos[0] - path[0][0]))
-        #move the robot until the cell is reach
-        while pos != path:
+        #move the robot and if the cell is reach, delete it and restart with the following
+        if pos != path:
             #change the speed depending the angle of the robot
             if thymioangle == alpha:
-                thymiospeedR = 20 #change this two line to change the value directly on the thymio
-                thymiospeedL = 20
+                return 0
             else:
-                #calculate the angle that the thymio need to turn
-                thymioangle = alpha - thymioangle
-                while thymioangle != alpha:
-                    if thymioangle > alpha:
-                        thymiospeedR = 0
-                        thymiospeedL = 20
-                    else:
-                        thymiospeedR = 20
-                        thymiospeedL = 0
-                kalman.kalman_update()
-                thymiospeedR = 20
-                thymiospeedL = 20
-            kalman.kalman_update()
-        #remove the cell from the path when it's reached
-        path.remove(path[0])
-        pass
+                #calculate and send the angle that the thymio need to turn
+                return alpha - thymioangle
+        else:
+            #remove the cell from the path when it's reached
+            path.remove(path[0])
+            alpha = math.atan2((pos[1] - path[0][1]), (pos[0] - path[0][0]))
+            #change the speed depending the angle of the robot
+            if thymioangle == alpha:
+                return 0
+            else:
+                #calculate and send the angle that the thymio need to turn
+                return alpha - thymioangle
 
     def getMotorSpeeds(self):
         # Get the motor speeds
