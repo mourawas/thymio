@@ -2,7 +2,7 @@ import numpy as np
 import math
 
 class GlobalPlanning:
-    def __inite__(self):
+    def __init__(self):
         self.magnification = 5
         self.map = None
         self.start = None
