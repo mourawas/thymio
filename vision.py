@@ -1,81 +1,137 @@
 import cv2
 import numpy as np
 import time
+from colorama import Fore, Style
+
 
 class Vision:
-    def __init__(self, target_height=10, fps=10):
+    def __init__(self, target_height=10, fps=10, threshold=128):
         """
         Initialize the Vision class with default settings.
-        
-        :param target_height: Height of the resulting matrix (default is 10).
-        :param fps: Number of frames per second to capture (default is 10).
         """
         self.camera = cv2.VideoCapture(0)
         if not self.camera.isOpened():
             raise Exception("Error: Unable to access the camera")
-        
+
         self.target_height = target_height
         self.fps = fps
-        self.frame_delay = 1 / fps  # Time delay between frames
+        self.threshold = threshold
+        self.frame_delay = 1 / fps
         self.matrix = None
         self.image = None
+        self.goal = None
+        self.start = None
+        self.angle = None
 
     def update(self):
         """
-        Capture a new frame from the camera and update the image and matrix.
+        Capture a new frame and update the matrix with colors for start and goal.
         """
+        start_time = time.time()
         ret, frame = self.camera.read()
         if not ret:
             raise Exception("Error: Unable to capture image from the camera")
-        
-        # Store the current image (frame)
+
         self.image = frame
-
-        # Resize the image while keeping the aspect ratio
-        height, width, _ = frame.shape
-        aspect_ratio = width / height
-        target_width = int(self.target_height * aspect_ratio)
-        resized_frame = cv2.resize(frame, (target_width, self.target_height), interpolation=cv2.INTER_AREA)
-
-        # Convert the image to HSV for color detection
+        resized_frame = self._resize_image(frame)
+        self.matrix = self._generate_matrix(resized_frame)
         hsv_frame = cv2.cvtColor(resized_frame, cv2.COLOR_BGR2HSV)
 
-        # Define HSV ranges for colors
-        # Black
-        lower_black = np.array([0, 0, 0])
-        upper_black = np.array([180, 255, 30])
-        mask_black = cv2.inRange(hsv_frame, lower_black, upper_black)
+        self.goal = self._find_color(hsv_frame, [([0, 70, 50], [10, 255, 255]), ([170, 70, 50], [180, 255, 255])])
+        self.start, self.angle = self._find_start(hsv_frame)
 
-        # White
-        # White (more relaxed thresholds)
-        lower_white = np.array([0, 0, 180])  # Increase the lower value to 180 for lighter shades
-        upper_white = np.array([180, 60, 255])  # Allow slightly more saturation and value range
-        mask_white = cv2.inRange(hsv_frame, lower_white, upper_white)
+        self._update_matrix_with_colors()
+        time.sleep(max(0, self.frame_delay - (time.time() - start_time)))
 
-        # Red (two ranges for the HSV circle)
-        lower_red1 = np.array([0, 70, 50])
-        upper_red1 = np.array([10, 255, 255])
-        lower_red2 = np.array([170, 70, 50])
-        upper_red2 = np.array([180, 255, 255])
-        mask_red = cv2.inRange(hsv_frame, lower_red1, upper_red1) | cv2.inRange(hsv_frame, lower_red2, upper_red2)
+    def _resize_image(self, frame):
+        """
+        Resize the input frame while keeping the aspect ratio.
+        """
+        height, width, _ = frame.shape
+        target_width = int(self.target_height * (width / height))
+        return cv2.resize(frame, (target_width, self.target_height), interpolation=cv2.INTER_AREA)
 
-        # Blue
-        lower_blue = np.array([90, 100, 50])
-        upper_blue = np.array([130, 255, 255])
+    def _generate_matrix(self, resized_frame):
+        """
+        Generate a binary matrix for black and white representation.
+        """
+        gray_frame = cv2.cvtColor(resized_frame, cv2.COLOR_BGR2GRAY)
+        _, binary_mask = cv2.threshold(gray_frame, self.threshold, 255, cv2.THRESH_BINARY)
+        return np.where(binary_mask == 255, 0, -1)
+
+    def _find_color(self, hsv_frame, ranges):
+        """
+        Find the largest contour of a given color range.
+        """
+        mask = sum(cv2.inRange(hsv_frame, np.array(lower), np.array(upper)) for lower, upper in ranges)
+        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        if contours:
+            largest = max(contours, key=cv2.contourArea)
+            moments = cv2.moments(largest)
+            if moments["m00"] != 0:
+                cx, cy = int(moments["m10"] / moments["m00"]), int(moments["m01"] / moments["m00"])
+                return (cx, cy)
+        return None
+
+    def _find_start(self, hsv_frame):
+        """
+        Detect the start (green and blue regions) and compute the orientation angle.
+
+        :return: Tuple (start position, angle in degrees) or (None, None) if not found.
+        """
+        lower_blue = np.array([85, 50, 50])
+        upper_blue = np.array([135, 255, 255])
+        lower_green = np.array([40, 50, 50])
+        upper_green = np.array([80, 255, 255])
+
         mask_blue = cv2.inRange(hsv_frame, lower_blue, upper_blue)
+        mask_green = cv2.inRange(hsv_frame, lower_green, upper_green)
 
-        # Create the color matrix
-        self.matrix = np.zeros((self.target_height, target_width), dtype=int)
-        self.matrix[mask_white > 0] = 0  # White
-        self.matrix[mask_black > 0] = -1  # Black
-        self.matrix[mask_red > 0] = -2    # Red
-        self.matrix[mask_blue > 0] = -3   # Blue
+        contours_blue, _ = cv2.findContours(mask_blue, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours_green, _ = cv2.findContours(mask_green, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        if contours_blue and contours_green:
+            largest_blue = max(contours_blue, key=cv2.contourArea)
+            largest_green = max(contours_green, key=cv2.contourArea)
+
+            moments_blue = cv2.moments(largest_blue)
+            moments_green = cv2.moments(largest_green)
+
+            if moments_blue["m00"] != 0 and moments_green["m00"] != 0:
+                cx_blue, cy_blue = int(moments_blue["m10"] / moments_blue["m00"]), int(moments_blue["m01"] / moments_blue["m00"])
+                cx_green, cy_green = int(moments_green["m10"] / moments_green["m00"]), int(moments_green["m01"] / moments_green["m00"])
+
+                dx = cx_blue - cx_green
+                dy = cy_blue - cy_green
+                angle = (np.degrees(np.arctan2(dy, dx)) - 90) % 360  # Adjusted calculation
+
+                start_x = (cx_blue + cx_green) // 2
+                start_y = (cy_blue + cy_green) // 2
+
+                return (start_x, start_y), angle
+
+        return None, None
+
+    def _update_matrix_with_colors(self):
+        """
+        Update the matrix with specific values for start and goal.
+        """
+        # Reset the matrix areas corresponding to start and goal
+        self.matrix[self.matrix == -2] = 0  # Reset blue regions
+        self.matrix[self.matrix == -3] = 0  # Reset red regions
+
+        # Update the matrix with new start and goal positions
+        if self.start:
+            x, y = self.start
+            self.matrix[y, x] = -2  # Start marked as -2
+        if self.goal:
+            x, y = self.goal
+            self.matrix[y, x] = -3  # Goal marked as -3
 
     def get_matrix(self):
         """
         Get the current color matrix.
-        
-        :return: Current color matrix (as numpy array).
         """
         if self.matrix is None:
             raise Exception("Matrix has not been initialized. Call update() first.")
@@ -84,12 +140,54 @@ class Vision:
     def get_image(self):
         """
         Get the current image (frame).
-        
-        :return: Current image.
         """
         if self.image is None:
             raise Exception("Image has not been initialized. Call update() first.")
         return self.image
+
+    def get_goal(self):
+        """
+        Get the position of the goal (center of the largest red area).
+        """
+        return self.goal
+
+    def get_start(self):
+        """
+        Get the position of the start (center of the detected region).
+        """
+        return self.start
+
+    def get_angle(self):
+        """
+        Get the orientation angle of the detected start.
+        """
+        return self.angle
+
+    def display_matrix(self):
+        """
+        Print the matrix with consistent spacing and colors in the console.
+        """
+        result = ""
+        for row in self.matrix:
+            result += "".join(
+                f"{Fore.BLUE}{x:3} " if x == -2 else
+                f"{Fore.RED}{x:3} " if x == -3 else
+                f"{Fore.MAGENTA}{x:3} " if x == -1 else
+                f"{Fore.WHITE}{x:3} "
+                for x in row
+            ) + "\n"
+        print(result + Style.RESET_ALL)
+
+    def display_info(self):
+        """
+        Display the detected goal and start positions with angle.
+        """
+        print(f"Goal position: {self.get_goal()}" if self.get_goal() else "Goal not detected")
+        if self.get_start():
+            print(f"Start position: {self.get_start()}, Angle: {self.get_angle():.2f}°")
+        else:
+            print("Start not detected")
+        cv2.imshow("Captured Image", self.get_image())
 
     def release(self):
         """
@@ -99,32 +197,16 @@ class Vision:
         cv2.destroyAllWindows()
 
 
-# Main function to test the Vision class
-# if __name__ == "__main__":
-#     try:
-#         vision = Vision(target_height=20, fps=1)  # Set FPS to 10
-        
-#         while True:
-#             start_time = time.time()
-            
-#             # Update the vision system
-#             vision.update()
+if __name__ == "__main__":
+    try:
+        vision = Vision(target_height=20, fps=3, threshold=128)
 
-#             # Get the current matrix and display it
-#             matrix = vision.get_matrix()
-#             print("Color Matrix:")
-#             print(matrix)
+        while True:
+            vision.update()
+            vision.display_matrix()
+            vision.display_info()
 
-#             # Display the current image
-#             cv2.imshow("Captured Image", vision.get_image())
-
-#             # Wait to match the desired FPS
-#             elapsed_time = time.time() - start_time
-#             if elapsed_time < vision.frame_delay:
-#                 time.sleep(vision.frame_delay - elapsed_time)
-
-#             # Quit with 'q'
-#             if cv2.waitKey(1) & 0xFF == ord('q'):
-#                 break
-#     finally:
-#         vision.release()
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+    finally:
+        vision.release()
