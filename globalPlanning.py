@@ -1,20 +1,20 @@
 import numpy as np
-import matplotlib.pyplot as plt
+import math
 
 class GlobalPlanning:
     def __inite__(self):
         self.magnification = 5
         self.map = []
-        self.start = []
-        self.goal = []
+        self.start = ()
+        self.goal = ()
         self.path = [] #Shortest path
         
     #here is the function for the dijkstra algortihm
     def dijkstra(self, matrix, start, goal):
         #If current goal equal old goal we don't do the algorithm
-        #if self.goal == goal:
-            #return self.path
-            
+        if self.goal == goal:
+            return self.path
+        
         # Initialize variables
         n = 0  # Distance from start
         grid = np.full_like(matrix, -4)  # Initialize grid with -4 (unmarked)
