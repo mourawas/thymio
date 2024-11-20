@@ -10,20 +10,19 @@ class GlobalPlanning:
         self.path = [] #Shortest path
         
     #here is the function for the dijkstra algortihm
-    def dijkstra(self, matrix, startVision, goalVision):
+    def dijkstra(self, matrix, start, goal):
         #If current goal equal old goal we don't do the algorithm
-        if self.goal == goalVision:
+        if self.goal == goal:
             return self.path
         
         
         # Initialize variables
         self.map = matrix
-        self.start = startVision
-        self.goal = goalVision
+        self.start = start
+        self.goal = goal
         n = 0  # Distance from start
         grid = np.full_like(self.map, -4)  # Initialize grid with -4 (unmarked)
         current = None  # Current cell in path
-        path = []
 
         # Make obstacles bigger
         obstacles = []
@@ -50,12 +49,12 @@ class GlobalPlanning:
                         self.map[obstacle[0], obstacle[1] + y] = -1
                 
         # Mark the start cell with n
-        grid[startVision] = n
+        grid[self.start] = n
     
         # Initialize a list to keep track of the frontier cells
-        frontier = [startVision]
+        frontier = [self.start]
     
-        while grid[goalVision] == -4:
+        while grid[self.goal] == -4:
             n += 1
             new_frontier = []
             # For each cell in the current frontier
@@ -86,9 +85,9 @@ class GlobalPlanning:
             frontier = new_frontier
     
         # Reconstruct the path
-        current = goalVision
-        path.append(current)
-        while current != startVision:
+        current = self.goal
+        self.path.append(current)
+        while current != self.start:
             neighbors = [
                 (current[0]-1, current[1]),     # Up
                 (current[0]+1, current[1]),     # Down
@@ -112,8 +111,8 @@ class GlobalPlanning:
                 # No path found
                 return None, matrix
             # Append next_cell to path
-            path.append(next_cell)
+            self.path.append(next_cell)
             current = next_cell
         # Reverse the path
-        path.reverse()
-        return path, matrix
+        self.path.reverse()
+        return self.path, self.map
