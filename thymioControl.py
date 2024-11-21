@@ -1,12 +1,10 @@
 import math
 class ThymioControl:
     def __init__(self):
-        self.__threshold = 5/360*2*math.pi #angle in radian
         self.__pos = []        
         self.__oldPos = []
         self.__angle = None
         self.__oldAngle = None
-
         self.__oldPoses = []
 
         self.__step = 1
@@ -57,11 +55,6 @@ class ThymioControl:
             self.__step += 1
 
             self.move(self.__pos, self.__angle)
-
-            """
-            v, w = 0, 0
-            wl, wr = self.differentialDrive(v, w)
-            """
         else:
             # move throwards the next cell in the path
             v, w = self.__linearSpeed, angleDistance * self.__thymioRotationalSpeedConversion
@@ -82,25 +75,6 @@ class ThymioControl:
         w = ((wr - wl) * self.__radius / self.__thymioWheelSpeedConversion) / self.__lenght
         v = ((wr + wl) * self.__radius / self.__thymioWheelSpeedConversion) / 2
         return
-
-    def getProximity(self):
-        # get the proximity sensor readings
-        pass
-
-    def getProximity(self, sensor):
-        # get the proximity sensor reading for a specific sensor
-        pass
-
-    def setMotors(self, left_target, right_target):
-        # set the motor speeds
-        pass
-
-    def turn(self, angle):
-        # turn the robot
-        pass
-
-    def getRotationalVelocity(self):
-        return 
     
     def amIKidnapped(self):
         # check if the robot is kidnapped
