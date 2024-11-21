@@ -40,10 +40,21 @@ class ThymioControl:
                 return alpha - thymioangle
 
     def getMotorSpeeds(self):
-        # Get the motor speeds
+        # get the motor speeds
         return motor_left_speed, motor_right_speed
-        pass
 
     def getProximity(self):
-        # Get the proximity sensor readings
+        # get the proximity sensor readings
+        pass
+
+    def getProximity(self, sensor):
+        # get the proximity sensor reading for a specific sensor
+        pass
+
+    def setMotors(self, left_target, right_target):
+        # set the motor speeds
+        pass
+
+    def turn(self, angle):
+        # turn the robot
         pass
