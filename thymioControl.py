@@ -3,6 +3,9 @@ import math
 
 class ThymioControl:
     def __init__(self):
+        self.treshold = 5/360*2*math.pi #angle in radian
+        self.pos = None
+        self.angle = None
         pass
         
     def move(self, speed):
@@ -10,34 +13,34 @@ class ThymioControl:
         # speed has two values: the velocity in the direction aligned with the robot's front/back and the direction perpendicular to the robot's front/back
         pass
 
-    def move(path):
+    def move(self, path, position, angle):
         # Move the robot along the path
         # then remove the heading from the path after moving
-        thymioangle = 0 #remove this line to take the real value of thymio angle
-        thymiox = 3; thymioy = 3 #remove this line to take the real pos of the thymio
 
-        #pos of the robot (put the real value thymio.x or i don't know what)
-        pos = (thymiox, thymioy)
+        #position and angle of the thymio
+        self.angle = angle #remove this line to take the real value of thymio angle
+        self.pos = position #remove this line to take the real pos of the thymio
+
         #calculate the angle that the thymio need
-        alpha = math.atan2((pos[1] - path[0][1]), (pos[0] - path[0][0]))
+        alpha = math.atan2((self.pos[1] - path[0][1]), (self.pos[0] - path[0][0]))
         #move the robot and if the cell is reach, delete it and restart with the following
-        if pos != path:
+        if self.pos != path[0]:
             #change the speed depending the angle of the robot
-            if thymioangle == alpha:
+            if abs(self.angle - alpha) < self.treshold:
                 return 0
             else:
                 #calculate and send the angle that the thymio need to turn
-                return alpha - thymioangle
+                return alpha - self.angle
         else:
             #remove the cell from the path when it's reached
             path.remove(path[0])
-            alpha = math.atan2((pos[1] - path[0][1]), (pos[0] - path[0][0]))
+            alpha = math.atan2((self.pos[1] - path[0][1]), (self.pos[0] - path[0][0]))
             #change the speed depending the angle of the robot
-            if thymioangle == alpha:
+            if abs(self.angle - alpha) < self.treshold:
                 return 0
             else:
                 #calculate and send the angle that the thymio need to turn
-                return alpha - thymioangle
+                return alpha - self.angle
 
     def getMotorSpeeds(self):
         # Get the motor speeds
