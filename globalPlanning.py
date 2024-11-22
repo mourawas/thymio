@@ -3,7 +3,7 @@ import math
 
 class GlobalPlanning:
     def __init__(self):
-        self.magnification = 5
+        self.magnification = 2
         self.map = None
         self.start = None
         self.goal = None
@@ -31,16 +31,11 @@ class GlobalPlanning:
                 if self.map[x, y] == -1:
                     obstacles.append((x, y))
         for obstacle in obstacles:
-            neighbors = [
-                (obstacle[0]-1, obstacle[1]),   # Up
-                (obstacle[0]+1, obstacle[1]),   # Down
-                (obstacle[0], obstacle[1]-1),   # Left
-                (obstacle[0], obstacle[1]+1),   # Right
-                (obstacle[0]-1, obstacle[1]-1), # Up Left
-                (obstacle[0]-1, obstacle[1]+1), # Up Right
-                (obstacle[0]+1, obstacle[1]-1), # Down Left
-                (obstacle[0]+1, obstacle[1]+1)  # Down Right
-            ]
+            neighbors = []
+            for dx in range(-self.magnification, self.magnification + 1):
+                for dy in range(-self.magnification, self.magnification + 1):
+                    if dx != 0 or dy != 0:  # Exclude the obstacle itself
+                        neighbors.append((obstacle[0] + dx, obstacle[1] + dy))
             for neighbor in neighbors:
                 if (0 <= neighbor[0] < grid.shape[0]) and (0 <= neighbor[1] < grid.shape[1]):
                     self.map[neighbor] = -1
