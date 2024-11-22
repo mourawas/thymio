@@ -32,18 +32,19 @@ class GlobalPlanning:
                     obstacles.append((x, y))
         for obstacle in obstacles:
             neighbors = [
-                    (obstacle[0]-1, obstacle[1]),   # Up
-                    (obstacle[0]+1, obstacle[1]),   # Down
-                    (obstacle[0], obstacle[1]-1),   # Left
-                    (obstacle[0], obstacle[1]+1),   # Right
-                    (obstacle[0]-1, obstacle[1]-1), # Up Left
-                    (obstacle[0]-1, obstacle[1]+1), # Up Right
-                    (obstacle[0]+1, obstacle[1]-1), # Down Left
-                    (obstacle[0]+1, obstacle[1]+1)  # Down Right
-                ]
+                (obstacle[0]-1, obstacle[1]),   # Up
+                (obstacle[0]+1, obstacle[1]),   # Down
+                (obstacle[0], obstacle[1]-1),   # Left
+                (obstacle[0], obstacle[1]+1),   # Right
+                (obstacle[0]-1, obstacle[1]-1), # Up Left
+                (obstacle[0]-1, obstacle[1]+1), # Up Right
+                (obstacle[0]+1, obstacle[1]-1), # Down Left
+                (obstacle[0]+1, obstacle[1]+1)  # Down Right
+            ]
             for neighor in neighbors:
-                if self.map[neighbor] != -1:
-                    self.map[neighbor] = -1
+                if (0 <= neighbor[0] < grid.shape[0]) and (0 <= neighbor[1] < grid.shape[1]):
+                    if self.map[neighbor] != -1:
+                        self.map[neighbor] = -1
                 
         # Mark the start cell with n
         grid[self.start] = n
