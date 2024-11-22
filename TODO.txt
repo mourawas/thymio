@@ -1,3 +1,13 @@
 could be helpful to keep an internal state to the kalman filter
 
 don't know if I should do kalman update right after getting the new observation from vision
+
+KF of EKF?
+
+vision update itself when get_robot_pose or get_matrix is called
+
+get_map from vision, only need backgoudn and obstacles
+
+global planning shouldn't modify map
+
+fix obstacle enlargement

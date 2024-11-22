@@ -28,7 +28,23 @@ class ThymioControl:
 
     def set_path(self, path):
         self.__path = path
+        self.__reduce_path()
         self.__step = 1
+
+    def __reduce_path(self):
+        # reduce the path by removing the cells that are in a straight line
+        i = 0
+        while i < len(self.__path) - 2:
+            x1, y1 = self.__path[i]
+            x2, y2 = self.__path[i + 1]
+            x3, y3 = self.__path[i + 2]
+            if (x1 - x2) * (y2 - y3) == (y1 - y2) * (x2 - x3):
+                self.__path.pop(i + 1)
+            else:
+                i += 1
+
+    def get_path(self):
+        return self.__path
 
     def move(self, position, angle):
         # move the robot along the path
