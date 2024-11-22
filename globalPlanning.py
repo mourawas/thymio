@@ -31,22 +31,19 @@ class GlobalPlanning:
                 if self.map[x, y] == -1:
                     obstacles.append((x, y))
         for obstacle in obstacles:
-            if self.map[obstacle[0]-1, obstacle[1]] == 0:
-                for x in range(5):
-                    if 0 <= obstacle[0] - x:
-                        self.map[obstacle[0] - x, obstacle[1]] = -1
-            if self.map[obstacle[0]+1, obstacle[1]] == 0:
-                for x in range(5):
-                    if obstacle[0] + x < grid.shape[0]:
-                        self.map[obstacle[0] + x, obstacle[1]] = -1
-            if self.map[obstacle[0], obstacle[1]-1] == 0:
-                for y in range(5):
-                    if 0 <= obstacle[1] - y:
-                        self.map[obstacle[0], obstacle[1] - y] = -1
-            if self.map[obstacle[0], obstacle[1]+1] == 0:
-                 for y in range(5):
-                    if obstacle[1] + y <= grid.shape[1]:
-                        self.map[obstacle[0], obstacle[1] + y] = -1
+            neighbors = [
+                    (obstacle[0]-1, obstacle[1]),   # Up
+                    (obstacle[0]+1, obstacle[1]),   # Down
+                    (obstacle[0], obstacle[1]-1),   # Left
+                    (obstacle[0], obstacle[1]+1),   # Right
+                    (obstacle[0]-1, obstacle[1]-1), # Up Left
+                    (obstacle[0]-1, obstacle[1]+1), # Up Right
+                    (obstacle[0]+1, obstacle[1]-1), # Down Left
+                    (obstacle[0]+1, obstacle[1]+1)  # Down Right
+                ]
+            for neighor in neighbors:
+                if self.map[neighbor] != -1:
+                    self.map[neighbor] = -1
                 
         # Mark the start cell with n
         grid[self.start] = n
@@ -109,7 +106,7 @@ class GlobalPlanning:
                         
             if next_cell is None:
                 # No path found
-                return None, matrix
+                return None, self.map
             # Append next_cell to path
             self.path.append(next_cell)
             current = next_cell
