@@ -40,7 +40,7 @@ class Vision:
         self.goal = self._find_color(hsv_frame, [([0, 70, 50], [10, 255, 255]), ([170, 70, 50], [180, 255, 255])])
         self.start, self.angle = self._find_start(hsv_frame)
 
-        self._update_matrix_with_colors()
+        #self._update_matrix_with_colors()
         time.sleep(max(0, self.frame_delay - (time.time() - start_time)))
 
     def _resize_image(self, frame):
@@ -130,8 +130,7 @@ class Vision:
 
     def get_matrix(self):
         """
-        Get the current color matrix.
-        """
+        Get the current color matrix. """
         if self.matrix is None:
             raise Exception("Matrix has not been initialized. Call update() first.")
         return self.matrix
@@ -198,7 +197,7 @@ class Vision:
 
 if __name__ == "__main__":
     try:
-        vision = Vision(target_height=20, fps=3, threshold=128)
+        vision = Vision(target_height=20, fps=20, threshold=128)
 
         while True:
             vision.update()
