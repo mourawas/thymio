@@ -11,3 +11,5 @@ get_map from vision, only need backgoudn and obstacles
 global planning shouldn't modify map
 
 fix obstacle enlargement
+
+kalman receives v and w

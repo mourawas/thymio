@@ -43,8 +43,7 @@ class GlobalPlanning:
             ]
             for neighbor in neighbors:
                 if (0 <= neighbor[0] < grid.shape[0]) and (0 <= neighbor[1] < grid.shape[1]):
-                    if self.map[neighbor] != -1:
-                        self.map[neighbor] = -1
+                    self.map[neighbor] = -1
                 
         # Mark the start cell with n
         grid[self.start] = n

@@ -16,7 +16,7 @@ class Plotter:
         rows, cols = self.map.shape
         # plot start and goal
         plt.figure(figsize=(10, 10))
-        plt.imshow(self.map, cmap='gray', origin='upper')
+        plt.imshow(self.map, cmap='gray', origin='lower')
         plt.plot(self.start[1], self.start[0], color='green', marker='o', label='Start')
         plt.plot(self.goal[1], self.goal[0], color='blue', marker='o', label='Goal')
         plt.xticks(range(cols))
@@ -32,7 +32,7 @@ class Plotter:
         rows, cols = map.shape
         # plot start and goal
         plt.figure(figsize=(10, 10))
-        plt.imshow(map, cmap='gray', origin='upper')
+        plt.imshow(map, cmap='gray', origin='lower')
         plt.plot(start[1], start[0], color='green', marker='o', label='Start')
         plt.plot(goal[1], goal[0], color='blue', marker='o', label='Goal')
         plt.xticks(range(cols))
@@ -47,7 +47,7 @@ class Plotter:
         # plot the map
         rows, cols = self.map.shape
         plt.figure(figsize=(10, 10))
-        plt.imshow(self.map, cmap='gray', origin='upper')
+        plt.imshow(self.map, cmap='gray', origin='lower')
 
         # plot the path
         path_rows, path_cols = zip(*path)
