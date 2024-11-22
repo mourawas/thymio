@@ -41,7 +41,7 @@ class GlobalPlanning:
                 (obstacle[0]+1, obstacle[1]-1), # Down Left
                 (obstacle[0]+1, obstacle[1]+1)  # Down Right
             ]
-            for neighor in neighbors:
+            for neighbor in neighbors:
                 if (0 <= neighbor[0] < grid.shape[0]) and (0 <= neighbor[1] < grid.shape[1]):
                     if self.map[neighbor] != -1:
                         self.map[neighbor] = -1
