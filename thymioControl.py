@@ -26,10 +26,22 @@ class ThymioControl:
         self.__lenght = 93 # mm, distance between the wheels
         self.__radius = 22 # mm, radius of the wheels
 
+        # kalman filter state
+        self.x_cam = 0
+        self.y_cam = 0
+        self.theta_cam = 0
+        self.x_est = 0
+        self.y_est = 0
+        self.theta_est = 0
+
     def set_path(self, path):
         self.__path = path
         self.__reduce_path()
         self.__step = 1
+
+    def set_pose(self, position, angle):
+        self.__pos = position
+        self.__angle = angle
 
     def __reduce_path(self):
         # reduce the path by removing the cells that are in a straight line
@@ -90,7 +102,7 @@ class ThymioControl:
     def inverseDifferentialDrive(self, wl, wr):
         w = ((wr - wl) * self.__radius / self.__thymioWheelSpeedConversion) / self.__lenght
         v = ((wr + wl) * self.__radius / self.__thymioWheelSpeedConversion) / 2
-        return
+        return v, w
     
     def amIKidnapped(self):
         # check if the robot is kidnapped
@@ -107,3 +119,24 @@ class ThymioControl:
         self.__oldPoses.append((self.__pos, self.__angle))
         self.__oldPos = self.__pos
         self.__oldAngle = self.__angle
+
+    def get_x_est(self):
+        return self.x_est
+    
+    def set_x_est(self, x):
+        self.x_est = x
+    
+    def get_y_est(self):
+        return self.y_est
+    
+    def set_y_est(self, y):
+        self.y_est = y
+    
+    def get_theta_est(self):
+        return self.theta_est
+    
+    def set_theta_est(self, theta):
+        self.theta_est = theta
+    
+    def get_wheel_distance(self):
+        return self.__lenght

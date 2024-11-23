@@ -62,11 +62,19 @@ class Plotter:
         plt.show()
 
     def plot_trajectory(self, x_trajectory, y_trajectory):
-        # plot the trajectory
-        plt.plot(x_trajectory, y_trajectory, label='Trajectory')
-        plt.xlabel('X')
-        plt.ylabel('Y')
-        plt.title('Trajectory')
+
+        # plot the trajectory on the map
+        rows, cols = self.map.shape
+        plt.figure(figsize=(10, 10))
+        plt.imshow(self.map, cmap='gray', origin='lower')
+
+        plt.plot(x_trajectory, y_trajectory, color='red', marker='o', label='Trajectory')
+        
+        plt.xticks(range(cols))
+        plt.yticks(range(rows))
+        plt.grid(color='gray', linestyle='--', linewidth=0.5)
+        plt.gca().invert_yaxis()
+        plt.title("Grid Map with Trajectory")
         plt.legend()
         plt.show()
 
