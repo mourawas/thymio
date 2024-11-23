@@ -4,10 +4,29 @@ import time
 
 # Kalman class used for the Kalman filter
 
+# NEEDS A THYMIO CLASS, WHICH MEMORIZES x_cam, y_cam, theta_cam, x_est, y_est, theta_est
+# THE CLASS NEEDS TO BE INIZIALIZED BEFORE THE KALMAN FILTER
+
+# PSEUDOCODE for the main control loop:
+#     Always run the prediction step
+#     kalman.kalman_prediction(thymio, L_speed, R_speed)  
+
+#     if camera_available():  If the camera sees the robot
+#         thymio.x_cam, thymio.y_cam, thymio.theta_cam = get_camera_measurements()
+#         kalman.kalman_update(thymio)  Update the state with camera measurements
+
+#     # Use the updated/estimated state for navigation
+#     navigate_to_goal(thymio.x_est, thymio.y_est, thymio.theta_est)
+
 class Kalman:
     
     def __init__(self,thymio):
         
+        # INPUT: thymio instance, a class needed to memorize the state of the robot
+        #        this class contains (camera) x_cam, y_cam, theta_cam, (estimations) x_est, y_est, theta_est
+
+        # OUTPUT: None. Modifies the thymio instance
+
         # Transition state matrix
         self.A = np.matrix([[1,0,0],[0,1,0],[0,0,1]],dtype= 'float')
 
@@ -15,7 +34,6 @@ class Kalman:
         self.B = np.matrix([[1,0,0],[0,1,0],[0,0,1]],dtype= 'float')
 
         # Observation matrix. Current estimated position
-        # need to get this from navigation or control
         self.E = np.matrix([[thymio.x_cam],[thymio.y_cam],[thymio.theta_cam]],dtype= 'float')
 
         # Motor speeds
@@ -54,6 +72,10 @@ class Kalman:
 
     def kalman_prediction(self,thymio,L_speed,R_speed):
         
+        # INPUT: thymio instance, (motors) L_speed, R_speed
+
+        # OUTPUT: None. Modifies the thymio instance
+
         # Predicts the state of the robot based on the odometry and updates the 
         # variances of the system.
         
@@ -91,22 +113,25 @@ class Kalman:
 
     def kalman_update(self,thymio):
 
+        # INPUT: thymio instance
+        
+        # OUTPUT: None. Modifies the thymio instance
+
         # update the state of the robot and  the variances of the system 
         # with camera measurements
         
         # Measured state matrix
         Z = np.matrix([[thymio.x_cam],[thymio.y_cam],[thymio.theta_cam]],dtype= 'float')
         
-        # Update the state of the Kalman with the state of the robot
-        # These need to be defined in navigation or control 
+        # Update the state of the Kalman with the state of the robot 
         self.E[0] = thymio.x_est 
         self.E[1] = thymio.y_est 
         self.E[2] = thymio.theta_est 
         
         # Kalman gain (slide 48)
-        K_den = np.linalg.inv(np.dot(self.H,np.dot(self.P,np.transpose(self.H))) + self.R)
-        K_num = np.dot(self.P,np.transpose(self.H))
-        K = np.dot(K_num,K_den)        
+        K1 = np.linalg.inv(np.dot(self.H,np.dot(self.P,np.transpose(self.H))) + self.R)
+        K2 = np.dot(self.P,np.transpose(self.H))
+        K = np.dot(K2,K1)        
         
         # Correction of the state with the Kalman gain and the measurements 
         # E=E+K⋅(Z−H⋅E)
@@ -124,5 +149,3 @@ class Kalman:
         
         # Update the time of the last kalman done to find deltaT
         self.lastKalman = time.time_ns()/10e8
-
-        return False
