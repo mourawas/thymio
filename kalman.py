@@ -74,7 +74,7 @@ class Kalman:
             self.E[2] = theta
 
     def get_state(self):
-        return self.E
+        return self.E[0], self.E[1], self.E[2]
 
     def set_lastKalman_time(self):
         self.lastKalman = time.time_ns()/10e8
