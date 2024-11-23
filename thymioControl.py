@@ -18,9 +18,13 @@ class ThymioControl:
         self.__linearSpeed = 500
 
         # conversion from rad/s to wheel speed command
-        self.__thymioWheelSpeedConversion = 2
+        self.__thymioWheelSpeedConversion = 65.5
         # constant proportional parameter for transforming angle into rotational speed
         self.__thymioRotationalSpeedConversion = 0.55
+        # conversion from measured distance to mm
+        self.__distanceConversion = 10
+        # adjustment for the thymio's wheels
+        self.__wheelsAdjustment = 1.1
         
         # robot geometry
         self.__lenght = 93 # mm, distance between the wheels
@@ -70,7 +74,7 @@ class ThymioControl:
         # calculate the distance between the robot and the objective
         x_diff = objective[0] - self.__pos[0]
         y_diff = objective[1] - self.__pos[1]
-        distance = math.sqrt(x_diff**2 + y_diff**2)
+        distance = math.sqrt(x_diff**2 + y_diff**2) * self.__distanceConversion
 
         # calculate the angle between the robot and the objective
         angleDistance = self.__radToDeg(math.atan2(y_diff, x_diff))
@@ -95,13 +99,13 @@ class ThymioControl:
         return angle * 180 / math.pi
     
     def differentialDrive(self, v, w):
-        wl = self.__thymioWheelSpeedConversion * (v - self.__lenght * w / 2) / self.__radius
+        wl = self.__thymioWheelSpeedConversion * self.__wheelsAdjustment * (v - self.__lenght * w / 2) / self.__radius
         wr = self.__thymioWheelSpeedConversion * (v + self.__lenght * w / 2) / self.__radius
         return wl, wr
     
     def inverseDifferentialDrive(self, wl, wr):
-        w = ((wr - wl) * self.__radius / self.__thymioWheelSpeedConversion) / self.__lenght
-        v = ((wr + wl) * self.__radius / self.__thymioWheelSpeedConversion) / 2
+        w = ((wr - wl/self.__wheelsAdjustment) * self.__radius / self.__thymioWheelSpeedConversion) / self.__lenght
+        v = ((wr + wl/self.__wheelsAdjustment) * self.__radius / self.__thymioWheelSpeedConversion) / 2
         return v, w
     
     def amIKidnapped(self):
