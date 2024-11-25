@@ -4,9 +4,6 @@ import time
 
 # Kalman class used for the Kalman filter
 
-# NEEDS A THYMIO CLASS, WHICH MEMORIZES x_cam, y_cam, theta_cam, x_est, y_est, theta_est
-# THE CLASS NEEDS TO BE INIZIALIZED BEFORE THE KALMAN FILTER
-
 # PSEUDOCODE for the main control loop:
 #     Always run the prediction step
 #     kalman.kalman_prediction(thymio, L_speed, R_speed)  
@@ -15,16 +12,12 @@ import time
 #         thymio.x_cam, thymio.y_cam, thymio.theta_cam = get_camera_measurements()
 #         kalman.kalman_update(thymio)  Update the state with camera measurements
 
-#     # Use the updated/estimated state for navigation
+#     Use the updated/estimated state for navigation
 #     navigate_to_goal(thymio.x_est, thymio.y_est, thymio.theta_est)
 
 class Kalman:
     
     def __init__(self):        
-        # INPUT: thymio instance, a class needed to memorize the state of the robot
-        #        this class contains (camera) x_cam, y_cam, theta_cam, (estimations) x_est, y_est, theta_est
-
-        # OUTPUT: None. Modifies the thymio instance
 
         # Transition state matrix
         self.A = np.matrix([[1,0,0],[0,1,0],[0,0,1]],dtype= 'float')
@@ -69,9 +62,9 @@ class Kalman:
         self.c = 0.43
 
     def initialize_position(self, x, y, theta):
-            self.E[0, 0] = x
-            self.E[1, 0] = y
-            self.E[2, 0] = theta
+        self.E[0, 0] = x
+        self.E[1, 0] = y
+        self.E[2, 0] = theta
 
     def get_state(self):
         return float(self.E[0, 0]), float(self.E[1, 0]), float(self.E[2, 0])
@@ -84,7 +77,7 @@ class Kalman:
         
         # INPUT: (motors) L_speed, R_speed
 
-        # OUTPUT: None. Modifies the thymio instance
+        # OUTPUT: None
 
         # Predicts the state of the robot based on the odometry and updates the 
         # variances of the system.
@@ -120,7 +113,7 @@ class Kalman:
 
         # INPUT: thymio instance
         
-        # OUTPUT: None. Modifies the thymio instance
+        # OUTPUT: None, modifies measurement
 
         # update the state of the robot and  the variances of the system 
         # with camera measurements
