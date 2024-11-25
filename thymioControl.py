@@ -12,19 +12,24 @@ class ThymioControl:
         # thresholds
         self.__kidnappingThresholdPosition = 20
         self.__kidnappingThresholdAngle = 30 # degrees
-        self.__reachedThreshold = 5 # mm
+        self.__reachedThreshold = 50 # mm
 
         # constant linear speed
-        self.__linearSpeed = 500
+        self.__linearSpeed = 10
 
         # conversion from rad/s to wheel speed command
         self.__thymioWheelSpeedConversion = 65.5
         # constant proportional parameter for transforming angle into rotational speed
-        self.__thymioRotationalSpeedConversion = 0.55
+        self.__thymioRotationalSpeedConversion = 0.1
         # conversion from measured distance to mm
         self.__distanceConversion = 10
         # adjustment for the thymio's wheels
         self.__wheelsAdjustment = 1.1
+        # cell to mm conversion
+        self.__cellToMm = 10
+
+        # max value for angular speed
+        self.__maxAngularSpeed = 3.14
         
         # robot geometry
         self.__lenght = 93 # mm, distance between the wheels
@@ -44,7 +49,7 @@ class ThymioControl:
         self.__step = 1
 
     def set_pose(self, position, angle):
-        self.__pos = position
+        self.__pos = position * self.__cellToMm
         self.__angle = angle
 
     def __reduce_path(self):
@@ -67,7 +72,7 @@ class ThymioControl:
 
         #position and angle of the thymio
         self.__angle = angle
-        self.__pos = position
+        self.__pos = position * self.__cellToMm
 
         objective = self.__path[self.__step]
 
@@ -77,7 +82,8 @@ class ThymioControl:
         distance = math.sqrt(x_diff**2 + y_diff**2) * self.__distanceConversion
 
         # calculate the angle between the robot and the objective
-        angleDistance = self.__radToDeg(math.atan2(y_diff, x_diff))
+        # normalize the angle between -pi and pi
+        angleDistance = (math.atan2(y_diff, x_diff) - self.__angle + math.pi) % (2 * math.pi) - math.pi
 
         # move the robot and if the cell is reached, delete it and restart with the following
         if distance < self.__reachedThreshold:
@@ -90,13 +96,11 @@ class ThymioControl:
         else:
             # move throwards the next cell in the path
             v, w = self.__linearSpeed, angleDistance * self.__thymioRotationalSpeedConversion
+            w = max(min(w, self.__maxAngularSpeed), -self.__maxAngularSpeed)
             wl, wr = self.differentialDrive(v, w)
             
             # find wl and wr with the astolfi controller
         return v, w, wl, wr, False
-            
-    def __radToDeg(self,angle):
-        return angle * 180 / math.pi
     
     def differentialDrive(self, v, w):
         wl = self.__thymioWheelSpeedConversion * self.__wheelsAdjustment * (v - self.__lenght * w / 2) / self.__radius
@@ -113,8 +117,8 @@ class ThymioControl:
         return math.sqrt(math.pow(self.__oldPos[0] - self.__pos[0]) + math.pow(self.__oldPos[1] - self.__pos[1])) > self.__kidnappingThresholdPosition or abs(self.__oldAngle - self.__angle) > self.__kidnappingThresholdAngle
     
     def update_pose(self, position, angle):
-        self.__pos[0] = position[0]
-        self.__pos[1] = position[1]
+        self.__pos[0] = position[0] * self.__cellToMm
+        self.__pos[1] = position[1] * self.__cellToMm
         self.__angle = angle
         self.__oldPos = self.__pos
         self.__oldAngle = self.__angle
@@ -123,24 +127,6 @@ class ThymioControl:
         self.__oldPoses.append((self.__pos, self.__angle))
         self.__oldPos = self.__pos
         self.__oldAngle = self.__angle
-
-    def get_x_est(self):
-        return self.x_est
-    
-    def set_x_est(self, x):
-        self.x_est = x
-    
-    def get_y_est(self):
-        return self.y_est
-    
-    def set_y_est(self, y):
-        self.y_est = y
-    
-    def get_theta_est(self):
-        return self.theta_est
-    
-    def set_theta_est(self, theta):
-        self.theta_est = theta
     
     def get_wheel_distance(self):
         return self.__lenght

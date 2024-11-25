@@ -13,3 +13,7 @@ global planning shouldn't modify map
 fix obstacle enlargement
 
 kalman receives v and w
+
+-------------------------------------------------------------------------------------------------
+
+map and position are in cartesian coordinates, thymio movement is in mm/s, need to convert

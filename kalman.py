@@ -69,12 +69,12 @@ class Kalman:
         self.c = 0.43
 
     def initialize_position(self, x, y, theta):
-            self.E[0] = x
-            self.E[1] = y
-            self.E[2] = theta
+            self.E[0, 0] = x
+            self.E[1, 0] = y
+            self.E[2, 0] = theta
 
     def get_state(self):
-        return self.E[0], self.E[1], self.E[2]
+        return float(self.E[0, 0]), float(self.E[1, 0]), float(self.E[2, 0])
 
     def set_lastKalman_time(self):
         self.lastKalman = time.time_ns()/10e8

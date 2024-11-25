@@ -29,3 +29,7 @@ The environment where the robot has to navigate has been decided by us, and it c
 - The **filtering** module implements a Kalman filter in order to better localize the robot. It predicts the robots position given the movements made and updates the prediction using data from the vision.
 
 #### Explanation of Implemented Python Classes
+
+#### Modules integration and Control Loop
+
+#### Tuning the Parameters
