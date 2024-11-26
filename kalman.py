@@ -53,14 +53,14 @@ class Kalman:
         self.U_var = np.diag([u1,u2])
 
         # Distance between the two wheels
-        self.d = 93
+        self.d = 80
 
         # Delta time 
         self.lastKalman = time.time_ns()/10e8
 
         # Speed from pwm to mm/s
         # Depends on which thymio
-        self.c = 0.43
+        self.c = 43/100
 
     def initialize_position(self, x, y, theta):
         self.E[0, 0] = x
@@ -86,6 +86,9 @@ class Kalman:
         # Time between the last update/prediction and this time
         deltaT = time.time_ns()/10e8 - self.lastKalman
 
+        # Update speeds of the robot
+        self.U = np.matrix([[L_speed],[R_speed]],dtype= 'float')
+
         # Jacobian of motion model corresponding to:
         # v = (c⋅Rspeed + c⋅Lspeed)/2
         # which gives
@@ -95,24 +98,21 @@ class Kalman:
                             [0.5*math.sin(self.E[2])*self.c,0.5*math.sin(self.E[2])*self.c],
                             [1/self.d*self.c, -1/self.d*self.c]],dtype= 'float')
         
-        # Predicted state of the robot (AE+GU)⋅Δt (slide 41)
-        self.E = (np.dot(self.A, self.E) + np.dot(self.G, self.U))*deltaT
+        # Predicted state of the robot AE+GU⋅Δt (slide 41)
+        self.E = np.dot(self.A, self.E) + np.dot(self.G, self.U)*deltaT
         
         # Uncertainty due to the motors G⋅Uvar⋅G'+I
-        R = np.dot(self.G, np.dot(self.U_var,self.G.T)) + np.eye(3)
+        R = np.dot(self.G, np.dot(self.U_var,np.transpose(self.G))) + np.eye(3)
         
         # Update the variance of the system APA'+R (slide 44)
         self.P = np.dot(np.dot(self.A,self.P),np.transpose(self.A))+R
-        
-        # Keep speeds of the robot to compute the next prediction
-        self.U = np.matrix([[L_speed],[R_speed]],dtype= 'float')
         
         # Update the time of the last kalman done to find deltaT
         self.lastKalman = time.time_ns()/10e8
 
     def kalman_update(self, measurement):
 
-        # INPUT: thymio instance
+        # INPUT: measurement array
         
         # OUTPUT: None, modifies measurement
 
