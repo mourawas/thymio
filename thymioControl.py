@@ -5,25 +5,22 @@ class ThymioControl:
         self.__oldPos = []
         self.__angle = None
         self.__oldAngle = None
-        self.__oldPoses = []
 
         self.__step = 1
 
         # thresholds
         self.__kidnappingThresholdPosition = 20
         self.__kidnappingThresholdAngle = 30 # degrees
-        self.__reachedThreshold = 50 # mm
+        self.__reachedThreshold = 10 # mm
 
         # constant linear speed
-        self.__linearSpeed = 10
+        self.__linearSpeed = 20
 
         # conversion from rad/s to wheel speed command
         # self.__thymioWheelSpeedConversion = 65.5
-        self.__thymioWheelSpeedConversion = 0.43
+        self.__thymioWheelSpeedConversion = 0.43 # (mm/s)/pwd
         # constant proportional parameter for transforming angle into rotational speed
-        self.__thymioRotationalSpeedConversion = 0.1 # pwm/mm/s
-        # conversion from measured distance to mm
-        self.__distanceConversion = 10
+        self.__thymioRotationalSpeedConversion = 0.55
         # adjustment for the thymio's wheels
         self.__wheelsAdjustment = 1.1
         # cell to mm conversion
@@ -44,19 +41,19 @@ class ThymioControl:
         self.y_est = 0
         self.theta_est = 0
 
+    def set_pose(self, position, angle):
+        self.__pos = [position[0] * self.__cellToMm, position[1] * self.__cellToMm]
+        self.__angle = (2*math.pi - angle) % (2*math.pi)
+
+    def get_position(self):
+        return self.__pos
+
     def set_path(self, path):
         self.__path = []
         for position in path:
             self.__path.append([position[0] * self.__cellToMm, position[1] * self.__cellToMm])
         self.__reduce_path()
         self.__step = 1
-
-    def set_pose(self, position, angle):
-        self.__pos = position * self.__cellToMm
-        self.__angle = angle
-
-    def get_position(self):
-        return self.__pos
 
     def __reduce_path(self):
         # reduce the path by removing the cells that are in a straight line
@@ -69,21 +66,29 @@ class ThymioControl:
                 self.__path.pop(i + 1)
             else:
                 i += 1
-
-    def get_path(self):
-        return self.__path
     
     def get_path_cells(self):
         new_path = []
         for position in self.__path:
             new_path.append([position[0] / self.__cellToMm, position[1] / self.__cellToMm])
         return new_path
-
+    
+    def update_pose(self, position, angle):
+        self.__oldPos = self.__pos
+        self.__oldAngle = self.__angle
+        self.__pos[0] = position[0] * self.__cellToMm
+        self.__pos[1] = position[1] * self.__cellToMm
+        self.__angle = (angle + 2*math.pi) % (2*math.pi)
+    
+    def amIKidnapped(self):
+        # check if the robot is kidnapped
+        return math.sqrt(math.pow(self.__oldPos[0] - self.__pos[0]) + math.pow(self.__oldPos[1] - self.__pos[1])) > self.__kidnappingThresholdPosition or abs(self.__oldAngle - self.__angle) > self.__kidnappingThresholdAngle
+    
     def move(self, position, angle):
         # move the robot along the path
 
         #position and angle of the thymio
-        self.__angle = angle
+        self.__angle = (angle + 2*math.pi) % (2*math.pi)
         self.__pos = position * self.__cellToMm
 
         objective = self.__path[self.__step]
@@ -91,11 +96,16 @@ class ThymioControl:
         # calculate the distance between the robot and the objective
         x_diff = objective[0] - self.__pos[0]
         y_diff = objective[1] - self.__pos[1]
-        distance = math.sqrt(x_diff**2 + y_diff**2) * self.__distanceConversion
+        distance = math.sqrt(x_diff**2 + y_diff**2)
+        print("x_diff: ", x_diff, " y_diff: ", y_diff, " distance: ", distance)
 
         # calculate the angle between the robot and the objective
         # normalize the angle between -pi and pi
+        print("my angle: ", self.__angle)
+        print("waypoint angle: ", math.atan2(y_diff, x_diff))
+        print("diff angle: ", math.atan2(y_diff, x_diff) - self.__angle)
         angleDistance = (math.atan2(y_diff, x_diff) - self.__angle + math.pi) % (2 * math.pi) - math.pi
+        print("angleDistance: ", angleDistance)
 
         # move the robot and if the cell is reached, delete it and restart with the following
         if distance < self.__reachedThreshold:
@@ -104,41 +114,31 @@ class ThymioControl:
                 return 0, 0, 0, 0, True
             self.__step += 1
 
-            self.move(self.__pos, self.__angle)
+            self.move(position, angle)
         else:
             # move throwards the next cell in the path
-            v, w = self.__linearSpeed, angleDistance / self.__thymioRotationalSpeedConversion
+            v, w = self.__linearSpeed, angleDistance * self.__thymioRotationalSpeedConversion
             w = max(min(w, self.__maxAngularSpeed), -self.__maxAngularSpeed)
             wl, wr = self.differentialDrive(v, w)
-            
+
             # find wl and wr with the astolfi controller
         return v, w, wl, wr, False
     
     def differentialDrive(self, v, w):
-        wl = self.__thymioWheelSpeedConversion * self.__wheelsAdjustment * (v - self.__lenght * w / 2) / self.__radius
-        wr = self.__thymioWheelSpeedConversion * (v + self.__lenght * w / 2) / self.__radius
+        wl = (1 / self.__thymioWheelSpeedConversion) * self.__wheelsAdjustment * (v - self.__lenght * w / 2) / self.__radius
+        wr = (1 / self.__thymioWheelSpeedConversion) * (v + self.__lenght * w / 2) / self.__radius
         return wl, wr
     
     def inverseDifferentialDrive(self, wl, wr):
-        w = ((wr - wl/self.__wheelsAdjustment) * self.__radius / self.__thymioWheelSpeedConversion) / self.__lenght
-        v = ((wr + wl/self.__wheelsAdjustment) * self.__radius / self.__thymioWheelSpeedConversion) / 2
+        w = ((wr - wl/self.__wheelsAdjustment) * self.__radius * self.__thymioWheelSpeedConversion) / self.__lenght
+        v = ((wr + wl/self.__wheelsAdjustment) * self.__radius * self.__thymioWheelSpeedConversion) / 2
         return v, w
     
-    def amIKidnapped(self):
-        # check if the robot is kidnapped
-        return math.sqrt(math.pow(self.__oldPos[0] - self.__pos[0]) + math.pow(self.__oldPos[1] - self.__pos[1])) > self.__kidnappingThresholdPosition or abs(self.__oldAngle - self.__angle) > self.__kidnappingThresholdAngle
-    
-    def update_pose(self, position, angle):
-        self.__oldPos = self.__pos
-        self.__oldAngle = self.__angle
-        self.__pos[0] = position[0] * self.__cellToMm
-        self.__pos[1] = position[1] * self.__cellToMm
-        self.__angle = angle
-    
-    def update_last_pose(self, position, angle):
-        self.__oldPoses.append((self.__pos, self.__angle))
-        self.__oldPos = self.__pos
-        self.__oldAngle = self.__angle
+    def convert_speed_cells(self, speed):
+        return speed / self.__cellToMm
     
     def get_wheel_distance(self):
         return self.__lenght
+    
+    def mm_to_cells(self, mm):
+        return mm / self.__cellToMm
