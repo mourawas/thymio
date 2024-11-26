@@ -22,37 +22,38 @@ class Kalman:
         # Transition state matrix
         self.A = np.matrix([[1,0,0],[0,1,0],[0,0,1]],dtype= 'float')
 
-        # Transition input matrix
-        self.B = np.matrix([[1,0,0],[0,1,0],[0,0,1]],dtype= 'float')
-
-        # Observation matrix. Current estimated position
+        # Observation matrix. Current estimated position (Corresponds to mu in the slides)
         self.E = np.matrix([[0],[0],[0]],dtype= 'float')
 
-        # Motor speeds
-        self.U = np.matrix([[0],[0]],dtype= 'float')
+        # Transition input matrix. Jacobian of the motion model
+        self.G = np.matrix([[1,0,0],[0,1,0],[0,0,1]],dtype= 'float')
+
+        # Jacobian of the measurement model. Measurement transformation matrix
+        # Since we measure directly x, y, theta, H is simply an identity matrix
+        self.H = np.matrix([[1,0,0],[0,1,0],[0,0,1]],dtype= 'float')
 
         # Covariance matrix (Corresponds to SIGMA in the slides)
         # Higher values -> more uncertain
         self.P = np.matrix([[10,0,0],[0,10,0],[0,0,1]],dtype= 'float')
 
-        # Measurement matrix 
-        self.H = np.matrix([[1,0,0],[0,1,0],[0,0,1]],dtype= 'float')
+        # Variances of measurement (x, y, theta)
+        # Arbitrary values
+        q1 = 1 
+        q2 = 1
+        q3 = np.pi/180 # 1 rad
+        self.Q = np.matrix([[q1,0,0],[0,q2,0],[0,0,q3]],dtype= 'float')
 
-        # Variances of motors (corresponds to Q in the slides)
+        # Motor speeds
+        self.U = np.matrix([[0],[0]],dtype= 'float')
+
+        # Variances of motors (Needed to compute Q)
         # Depends on which thymio
         u1 = 19
         u2 = 19
         self.U_var = np.diag([u1,u2])
 
-        # Variances of measurement (x, y, theta)
-        # Arbitrary values
-        r1 = 1 
-        r2 = 1
-        r3 = np.pi/180 # 1 rad
-        self.R = np.matrix([[r1,0,0],[0,r2,0],[0,0,r3]],dtype= 'float')
-
         # Distance between the two wheels
-        self.b = 93
+        self.d = 93
 
         # Delta time 
         self.lastKalman = time.time_ns()/10e8
@@ -85,23 +86,23 @@ class Kalman:
         # Time between the last update/prediction and this time
         deltaT = time.time_ns()/10e8 - self.lastKalman
 
-        # Transition matrix of the input corresponding to:
+        # Jacobian of motion model corresponding to:
         # v = (c⋅Rspeed + c⋅Lspeed)/2
         # which gives
         # Δx = (c/2)⋅(Rspeed+Lspeed)⋅cos(θ)⋅Δt
         # Δθ = ((c⋅Rspeed​−c⋅Lspeed​​)/b)⋅Δt
-        self.B = np.matrix([[0.5*math.cos(self.E[2])*self.c,0.5*math.cos(self.E[2])*self.c],
+        self.G = np.matrix([[0.5*math.cos(self.E[2])*self.c,0.5*math.cos(self.E[2])*self.c],
                             [0.5*math.sin(self.E[2])*self.c,0.5*math.sin(self.E[2])*self.c],
-                            [1/self.b*self.c, -1/self.b*self.c]],dtype= 'float')
+                            [1/self.d*self.c, -1/self.d*self.c]],dtype= 'float')
         
-        # Predicted state of the robot (AE+BU)⋅Δt
-        self.E = (np.dot(self.A, self.E) + np.dot(self.B, self.U))*deltaT
+        # Predicted state of the robot (AE+GU)⋅Δt (slide 41)
+        self.E = (np.dot(self.A, self.E) + np.dot(self.G, self.U))*deltaT
         
-        # Uncertainty due to the motors B⋅Uvar⋅B'+I
-        Q = np.dot(self.B, np.dot(self.U_var,self.B.T)) + np.eye(3)
+        # Uncertainty due to the motors G⋅Uvar⋅G'+I
+        R = np.dot(self.G, np.dot(self.U_var,self.G.T)) + np.eye(3)
         
-        # Update the variance of the system APA'+Q (slide 44)
-        self.P = np.dot(np.dot(self.A,self.P),np.transpose(self.A))+Q
+        # Update the variance of the system APA'+R (slide 44)
+        self.P = np.dot(np.dot(self.A,self.P),np.transpose(self.A))+R
         
         # Keep speeds of the robot to compute the next prediction
         self.U = np.matrix([[L_speed],[R_speed]],dtype= 'float')
@@ -122,7 +123,7 @@ class Kalman:
         Z = np.matrix([[measurement[0]],[measurement[1]],[measurement[2]]],dtype= 'float')
         
         # Kalman gain (slide 48)
-        K1 = np.linalg.inv(np.dot(self.H,np.dot(self.P,np.transpose(self.H))) + self.R)
+        K1 = np.linalg.inv(np.dot(self.H,np.dot(self.P,np.transpose(self.H))) + self.Q)
         K2 = np.dot(self.P,np.transpose(self.H))
         K = np.dot(K2,K1)        
         
