@@ -49,7 +49,7 @@ class ThymioControl:
         self.__step = 1
 
     def set_pose(self, position, angle):
-        self.__pos = position * self.__cellToMm
+        self.__pos = position #* self.__cellToMm
         self.__angle = angle
 
     def __reduce_path(self):
