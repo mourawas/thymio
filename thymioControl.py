@@ -12,7 +12,7 @@ class ThymioControl:
         # thresholds
         self.__kidnappingThresholdPosition = 20
         self.__kidnappingThresholdAngle = 30 # degrees
-        self.__reachedThreshold = 0.2 # mm
+        self.__reachedThreshold = 50 # mm
 
         # constant linear speed
         self.__linearSpeed = 10
@@ -49,7 +49,7 @@ class ThymioControl:
         self.__step = 1
 
     def set_pose(self, position, angle):
-        self.__pos = position #* self.__cellToMm
+        self.__pos = position * self.__cellToMm
         self.__angle = angle
 
     def __reduce_path(self):
@@ -72,14 +72,14 @@ class ThymioControl:
 
         #position and angle of the thymio
         self.__angle = angle
-        self.__pos = position #* self.__cellToMm
+        self.__pos = position * self.__cellToMm
 
         objective = self.__path[self.__step]
 
         # calculate the distance between the robot and the objective
         x_diff = objective[0] - self.__pos[0]
         y_diff = objective[1] - self.__pos[1]
-        distance = math.sqrt(x_diff**2 + y_diff**2) #* self.__distanceConversion
+        distance = math.sqrt(x_diff**2 + y_diff**2) * self.__distanceConversion
 
         # calculate the angle between the robot and the objective
         # normalize the angle between -pi and pi
