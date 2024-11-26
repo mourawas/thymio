@@ -18,9 +18,10 @@ class ThymioControl:
         self.__linearSpeed = 10
 
         # conversion from rad/s to wheel speed command
-        self.__thymioWheelSpeedConversion = 65.5
+        # self.__thymioWheelSpeedConversion = 65.5
+        self.__thymioWheelSpeedConversion = 0.43
         # constant proportional parameter for transforming angle into rotational speed
-        self.__thymioRotationalSpeedConversion = 0.1
+        self.__thymioRotationalSpeedConversion = 0.1 # pwm/mm/s
         # conversion from measured distance to mm
         self.__distanceConversion = 10
         # adjustment for the thymio's wheels
@@ -44,13 +45,18 @@ class ThymioControl:
         self.theta_est = 0
 
     def set_path(self, path):
-        self.__path = path
+        self.__path = []
+        for position in path:
+            self.__path.append([position[0] * self.__cellToMm, position[1] * self.__cellToMm])
         self.__reduce_path()
         self.__step = 1
 
     def set_pose(self, position, angle):
         self.__pos = position * self.__cellToMm
         self.__angle = angle
+
+    def get_position(self):
+        return self.__pos
 
     def __reduce_path(self):
         # reduce the path by removing the cells that are in a straight line
@@ -66,6 +72,12 @@ class ThymioControl:
 
     def get_path(self):
         return self.__path
+    
+    def get_path_cells(self):
+        new_path = []
+        for position in self.__path:
+            new_path.append([position[0] / self.__cellToMm, position[1] / self.__cellToMm])
+        return new_path
 
     def move(self, position, angle):
         # move the robot along the path
@@ -95,7 +107,7 @@ class ThymioControl:
             self.move(self.__pos, self.__angle)
         else:
             # move throwards the next cell in the path
-            v, w = self.__linearSpeed, angleDistance * self.__thymioRotationalSpeedConversion
+            v, w = self.__linearSpeed, angleDistance / self.__thymioRotationalSpeedConversion
             w = max(min(w, self.__maxAngularSpeed), -self.__maxAngularSpeed)
             wl, wr = self.differentialDrive(v, w)
             
@@ -117,13 +129,13 @@ class ThymioControl:
         return math.sqrt(math.pow(self.__oldPos[0] - self.__pos[0]) + math.pow(self.__oldPos[1] - self.__pos[1])) > self.__kidnappingThresholdPosition or abs(self.__oldAngle - self.__angle) > self.__kidnappingThresholdAngle
     
     def update_pose(self, position, angle):
+        self.__oldPos = self.__pos
+        self.__oldAngle = self.__angle
         self.__pos[0] = position[0] * self.__cellToMm
         self.__pos[1] = position[1] * self.__cellToMm
         self.__angle = angle
-        self.__oldPos = self.__pos
-        self.__oldAngle = self.__angle
     
-    def update_last_pose(self):
+    def update_last_pose(self, position, angle):
         self.__oldPoses.append((self.__pos, self.__angle))
         self.__oldPos = self.__pos
         self.__oldAngle = self.__angle
