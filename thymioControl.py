@@ -14,7 +14,7 @@ class ThymioControl:
         self.__reachedThreshold = 10 # mm
 
         # constant linear speed
-        self.__linearSpeed = 20
+        self.__linearSpeed = 60
 
         # conversion from rad/s to wheel speed command
         # self.__thymioWheelSpeedConversion = 65.5
@@ -43,7 +43,7 @@ class ThymioControl:
 
     def set_pose(self, position, angle):
         self.__pos = [position[0] * self.__cellToMm, position[1] * self.__cellToMm]
-        self.__angle = (2*math.pi - angle) % (2*math.pi)
+        self.__angle = angle
 
     def get_position(self):
         return self.__pos
@@ -78,7 +78,7 @@ class ThymioControl:
         self.__oldAngle = self.__angle
         self.__pos[0] = position[0] * self.__cellToMm
         self.__pos[1] = position[1] * self.__cellToMm
-        self.__angle = (angle + 2*math.pi) % (2*math.pi)
+        self.__angle = angle
     
     def amIKidnapped(self):
         # check if the robot is kidnapped
@@ -88,7 +88,7 @@ class ThymioControl:
         # move the robot along the path
 
         #position and angle of the thymio
-        self.__angle = (angle + 2*math.pi) % (2*math.pi)
+        self.__angle = angle
         self.__pos = position * self.__cellToMm
 
         objective = self.__path[self.__step]
@@ -97,6 +97,7 @@ class ThymioControl:
         x_diff = objective[0] - self.__pos[0]
         y_diff = objective[1] - self.__pos[1]
         distance = math.sqrt(x_diff**2 + y_diff**2)
+        print("objective: ", objective, " position: ", self.__pos)
         print("x_diff: ", x_diff, " y_diff: ", y_diff, " distance: ", distance)
 
         # calculate the angle between the robot and the objective
