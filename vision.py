@@ -6,7 +6,7 @@ from colorama import Fore, Style
 
 
 class Vision:
-    def __init__(self, target_height=10, fps=10, threshold=128, tag_size_cm=3.6, default_image_path=None):
+    def __init__(self, target_height=10, fps=10, threshold=128, tag_size_cm=3.7, default_image_path=None):
         """
         Initialize the Vision class with camera settings and a default image.
 
@@ -92,13 +92,13 @@ class Vision:
             tag_positions['bottom_left']
         ], dtype="float32")
 
-        print(f"Detected corners: {corners}")
+
 
         self.calculate_scale(corners)   # Calculate the scale (pixels per centimeter)
 
 
-        output_width = 1000
-        output_height = 700
+        output_width = 1200
+        output_height = 800
         dst = np.array([
             [0, 0],  # Top-left corner
             [output_width - 1, 0],  # Top-right corner
@@ -109,6 +109,8 @@ class Vision:
         # Perform perspective transform
         transform_matrix = cv2.getPerspectiveTransform(corners, dst)
         cropped_image = cv2.warpPerspective(self.image, transform_matrix, (output_width, output_height))
+
+        cv2.imshow("Cropped Image", transform_matrix)
 
         self.croped_image = cropped_image
 
@@ -166,7 +168,6 @@ class Vision:
 
         # Compute the scale (pixels per centimeter)
         self.pixel_to_cm_scale = avg_dist / self.tag_size_cm
-        print(f"Scale calculated: {self.pixel_to_cm_scale:.2f} pixels/cm")
 
 
     def _resize_image(self, frame):
@@ -194,6 +195,7 @@ class Vision:
         if self.pixel_to_cm_scale:
             self.pixel_to_cm_scale *= scale_x  # Assuming uniform scaling
             return resized_frame
+        
 
     def find_goal(self):
         """
@@ -201,7 +203,7 @@ class Vision:
         and replace the detected red region with white pixels.
 
         Updates:
-        - self.goal: Tuple of (x, y) coordinates representing the center of the red region.
+        - self.goal: Tuple of (y, x) coordinates representing the center of the red region.
         """
         if self.croped_image is None:
             raise ValueError("No cropped image available. Run detect_and_crop first.")
@@ -234,18 +236,19 @@ class Vision:
         # Calculate the center of the largest contour
         moments = cv2.moments(largest_contour)
         if moments["m00"] != 0:
-            cx = int(moments["m10"] / moments["m00"])
-            cy = int(moments["m01"] / moments["m00"])
-            self.goal = (cx, cy)
-            print(f"Goal detected")
+            cx = int(moments["m10"] / moments["m00"])  # x-coordinate (horizontal position)
+            cy = int(moments["m01"] / moments["m00"])  # y-coordinate (vertical position)
+            self.goal = (cy, cx)  # Store as (row, column) for consistency
+            print("Goal detected")
         else:
             self.goal = None
             print("Red region detected, but could not calculate center.")
             return
 
-        # Replace the detected red region with white pixels in the original image
+        # Replace the detected red region with white pixels in the cropped image
         white_color = (255, 255, 255)
         cv2.drawContours(self.croped_image, [largest_contour], -1, white_color, thickness=cv2.FILLED)
+
 
     def find_start(self):
         """
@@ -270,9 +273,6 @@ class Vision:
             self.angle = None
             return
 
-
-
-
         tag_corners = results[0].corners
         # Calculate distances between adjacent corners
         dist_top = np.linalg.norm(tag_corners[1] - tag_corners[0])  # Top side
@@ -283,11 +283,8 @@ class Vision:
         # Average the distances to get a more robust measurement
         apparent_size_pixels = (dist_top + dist_right + dist_bottom + dist_left) / 4
 
-        # tag_corners = results[0].corners
-        # apparent_size_pixels = np.linalg.norm(tag_corners[0] - tag_corners[1])
-        # Calculate the scale (pixels per cm)
         self.pixel_to_cm_scale = apparent_size_pixels / self.tag_size_cm
-        print(f"Scale calculated: {self.pixel_to_cm_scale:.2f} pixels/cm")
+        #print(f"Scale calculated: {self.pixel_to_cm_scale:.2f} pixels/cm")
 
 
         # Assuming we are interested in the first detected tag (modify if multiple tags exist)
@@ -309,14 +306,6 @@ class Vision:
         white_color = (255, 255, 255)
         corners = np.array(tag.corners, dtype=np.int32)  # Convert corners to integer format
         cv2.fillPoly(self.croped_image, [corners], white_color)
-
-        # Optionally visualize the start point and orientation
-        # if self.start:
-        #     cv2.circle(self.croped_image, self.start, 10, (0, 255, 0), -1)  # Green circle for the start
-        #     cv2.line(self.croped_image, (int(ptA[0]), int(ptA[1])), (int(ptB[0]), int(ptB[1])), (255, 0, 0), 2)  # Blue line for orientation
-
-
-
 
 
     def _generate_matrix(self, resized_frame):
@@ -350,6 +339,11 @@ class Vision:
             ret, frame = self.camera.read()
             if not ret:
                 raise Exception("Error: Unable to capture image from the camera")
+            
+            # output_width = 1200
+            # output_height = 800
+
+            # self.image = cv2.resize(self.image, (output_width, output_height))
             
             if live:
                 self.set_image(frame)
@@ -397,7 +391,7 @@ class Vision:
     def display_all(self):
         self.display_image()
         #self.display_matrix()
-        print(self.matrix.shape)
+        print(f"Matrix shape: {self.matrix.shape}")
         if self.start is not None and self.angle is not None:
             print(f"Start: {self.start}, Angle: {self.angle:.2f} rad")
         else:
@@ -424,7 +418,7 @@ if __name__ == "__main__":
         image_path1 = "images/IMG_7018.jpeg"
         image_path2 = "images/IMG_7020.jpeg"
         image_path3 = "images/IMG_7028.jpeg"
-        vision = Vision(fps=3,target_height=200, default_image_path=image_path3)
+        vision = Vision(fps=3,target_height=80, default_image_path=image_path3)
 
         vision.update_image(live=False)
     
