@@ -2,10 +2,10 @@
 Project for the Mobile Robotic course, fall semester 2024
 
 ## Group Members
-Rocca Federico (390233) - First year MSc in Robotics at EPFL, previous degree BSc in Computer Engineering at Politecnico di Milano  
-Rashidi Mohammad Massi () -  
-Rawas Mouhamad Bilal () -  
-Schär Mikaël Joël Michel (325388) - First year MSc in Robotics at EPFL, previous degree BSc in microengineering at EPFL
+**Rocca Federico** (390233) - First year MSc in Robotics at EPFL, previous degree BSc in Computer Engineering at Politecnico di Milano  
+**Rashidi Mohammad Massi** () -  
+**Rawas Mouhamad Bilal** () -  
+**Schär Mikaël Joël Michel** (325388) - First year MSc in Robotics at EPFL, previous degree BSc in Microengineering at EPFL
 
 ## Introduction
 The aim of the project is to build a system able of controlling a <a href="https://www.thymio.org/" target="_blank">Thymio</a> robot. This system shoud integrate all the main modules that are tipically found in a simple mobile robot:
@@ -14,14 +14,23 @@ The aim of the project is to build a system able of controlling a <a href="https
 - **Local Navigation**
 - **Filtering**
 
-#### Demo
+The robot should will be placed in an **environment** (explained later) where there are some **permanent obstacles**. Given a **camera view** of the environment, a **global plan** should be generated, starting from the Thymio's position, leading to the goal and avoiding the permanent obstacles. Some **random obstacles** may be introduced in the environment during the movement of the robot from start to goal, and it should be able to avoid them. The robot should be localized both using the camera image, that can be obstructed on purpose from time to time, and the odometry, by fusing them with the **filtering**.
 
-#### Environment
-The environment where the robot has to navigate has been designed by us, and it consists of a white floor, the navigable space, where we placed some black cutouts, that represent permanent obstacles, while the goal position is indicated by a red mark placed on the floor. In order to detect the white Thymio robot in the white background we decided to place a blue and green marker over its top and the choice of a rectangular shape is needed for extracting the orientation, together with the position.  
+### Demo
+Here's a demo of the system working:  
+<p align="center">
+  <video width="640" height="480" controls>
+    <source src="video.mov" type="video/mp4">
+  </video>
+</p>
+
+### Environment
+The environment that the robot has to navigate has been designed by us, and it consists of a **white floor**, the traversable space, where we placed some **black cutouts**, that represent permanent obstacles, while the goal position is indicated by a **red mark** placed on the floor.  
 <p align="center">
     <img src="images/env_image.png" width="400">
 </P>
-We also attached 4 <a href="https://april.eecs.umich.edu/software/apriltag" target="_blank">AprilTags</a> on the 4 corners of the environment in order to straighten the image that the camera records and generate precise position and orientation measurements based on that image.  
+In order to detect the white Thymio robot in the white background we decided to place an <a href="https://april.eecs.umich.edu/software/apriltag" target="_blank">AprilTag</a> on its top. It is used both for detecting the robot's position and orientation.
+We also attached 4 AprilTags on the 4 corners of the environment in order to straighten the image that the camera records and generate precise measurements based on that image.  
 <p align="center">
     <img src="images/tag.png" width="400">
 </p>

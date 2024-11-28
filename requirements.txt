@@ -1,0 +1,5 @@
+matplotlib
+numpy
+pupil_apriltags # notice that this package may require a python version <= 3.10
+colorama
+opencv-python
