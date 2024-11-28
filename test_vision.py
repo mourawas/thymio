@@ -417,9 +417,9 @@ class Vision:
 
 if __name__ == "__main__":
     try:
-        image_path = "IMG_7017.jpeg"
-        image_path1 = "IMG_7018.jpeg"
-        image_path2 = "IMG_7020.jpeg"
+        image_path = "images/IMG_7017.jpeg"
+        image_path1 = "images/IMG_7018.jpeg"
+        image_path2 = "images/IMG_7020.jpeg"
         vision = Vision(fps=3,target_height=200, default_image_path=image_path2)
 
         while True:
