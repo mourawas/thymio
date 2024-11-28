@@ -6,7 +6,7 @@ from colorama import Fore, Style
 
 
 class Vision:
-    def __init__(self, target_height=10, fps=10, threshold=128, tag_size_cm=5, default_image_path=None):
+    def __init__(self, target_height=10, fps=10, threshold=128, tag_size_cm=3.6, default_image_path=None):
         """
         Initialize the Vision class with camera settings and a default image.
 
@@ -27,7 +27,7 @@ class Vision:
         self.start = None
         self.angle = None
         self.crop_corners = None
-        self.pixel_to_cm_scale = None  
+        self.pixel_to_cm_scale = 1 
 
         # Load a default image if provided
         if default_image_path:
@@ -190,12 +190,10 @@ class Vision:
         if self.start:
             self.start = (int(self.start[0] * scale_x), int(self.start[1] * scale_y))
 
-        # Adjust the pixel-to-centimeter scale
-        if self.pixel_to_cm_scale is not None:
-            # Scale must be adjusted based on the new scale factor
-            self.pixel_to_cm_scale /= scale_x  # Assuming uniform scaling (scale_x == scale_y)
-
-        return resized_frame
+        # Adjust the pixel-to-cm scale if it exists
+        if self.pixel_to_cm_scale:
+            self.pixel_to_cm_scale *= scale_x  # Assuming uniform scaling
+            return resized_frame
 
     def find_goal(self):
         """
@@ -272,9 +270,28 @@ class Vision:
             self.angle = None
             return
 
+
+
+
+        tag_corners = results[0].corners
+        # Calculate distances between adjacent corners
+        dist_top = np.linalg.norm(tag_corners[1] - tag_corners[0])  # Top side
+        dist_right = np.linalg.norm(tag_corners[2] - tag_corners[1])  # Right side
+        dist_bottom = np.linalg.norm(tag_corners[3] - tag_corners[2])  # Bottom side
+        dist_left = np.linalg.norm(tag_corners[0] - tag_corners[3])  # Left side
+
+        # Average the distances to get a more robust measurement
+        apparent_size_pixels = (dist_top + dist_right + dist_bottom + dist_left) / 4
+
+        # tag_corners = results[0].corners
+        # apparent_size_pixels = np.linalg.norm(tag_corners[0] - tag_corners[1])
+        # Calculate the scale (pixels per cm)
+        self.pixel_to_cm_scale = apparent_size_pixels / self.tag_size_cm
+        print(f"Scale calculated: {self.pixel_to_cm_scale:.2f} pixels/cm")
+
+
         # Assuming we are interested in the first detected tag (modify if multiple tags exist)
         tag = results[0]
-
         # Calculate the center of the tag
         cx, cy = int(tag.center[0]), int(tag.center[1])
         self.start = (cx, cy)
@@ -376,7 +393,8 @@ class Vision:
 
     def display_all(self):
         self.display_image()
-        self.display_matrix()
+        #self.display_matrix()
+        print(self.matrix.shape)
         if self.start is not None and self.angle is not None:
             print(f"Start: {self.start}, Angle: {self.angle:.2f} rad")
         else:
@@ -400,9 +418,9 @@ class Vision:
 
 # if __name__ == "__main__":
 #     try:
-#         image_path1 = "IMG_7018.jpeg"
-#         image_path2 = "IMG_7020.jpeg"
-#         vision = Vision(fps=3,target_height=100, default_image_path=image_path2)
+#         image_path1 = "images/IMG_7018.jpeg"
+#         image_path2 = "images/IMG_7020.jpeg"
+#         vision = Vision(fps=3,target_height=200, default_image_path=image_path2)
 
 #         vision.update_image(live=False)
     
@@ -417,7 +435,6 @@ class Vision:
 
 if __name__ == "__main__":
     try:
-        image_path = "images/IMG_7017.jpeg"
         image_path1 = "images/IMG_7018.jpeg"
         image_path2 = "images/IMG_7020.jpeg"
         vision = Vision(fps=3,target_height=200, default_image_path=image_path2)
