@@ -19,7 +19,7 @@ class ThymioControl:
         self.__angleThreshold = 0.1 # rad
 
         # constant linear speed
-        self.__linearSpeed = 60
+        self.__linearSpeed = 500
 
         # conversion from rad/s to wheel speed command
         # self.__thymioWheelSpeedConversion = 65.5
@@ -31,10 +31,10 @@ class ThymioControl:
         # adjustment for the thymio's wheels
         self.__wheelsAdjustment = 1.1
         # cell to mm conversion
-        self.__cellToMm = 10
+        self.__cellToMm = 100
 
         # max value for angular speed
-        self.__maxAngularSpeed = 3.14
+        self.__maxAngularSpeed = 2 * math.pi
         
         # robot geometry
         self.__lenght = 93 # mm, distance between the wheels
