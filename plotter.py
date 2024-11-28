@@ -4,7 +4,7 @@ import math
 
 class Plotter:
     def __init__(self):
-        pass
+        self.path = []
 
     def set_map(self, map, start, goal):
         self.map = map
@@ -45,6 +45,7 @@ class Plotter:
 
     def plot_path(self, path):
         # plot the map
+        self.path = path
         rows, cols = self.map.shape
         plt.figure(figsize=(10, 10))
         plt.imshow(self.map, cmap='gray', origin='lower')
@@ -67,6 +68,10 @@ class Plotter:
         rows, cols = self.map.shape
         plt.figure(figsize=(10, 10))
         plt.imshow(self.map, cmap='gray', origin='lower')
+        if self.path != []:
+            # plot the path
+            path_rows, path_cols = zip(*self.path)
+            plt.scatter(path_cols, path_rows, color='blue', marker='s', label='Path')
 
         plt.plot(x_trajectory, y_trajectory, color='red', marker='o', label='Trajectory')
         
