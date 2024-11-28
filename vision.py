@@ -22,7 +22,7 @@ class Vision:
         self.threshold = threshold
         self.frame_delay = 1 / fps
         self.matrix = None
-        self.image = None
+        self.image = None 
         self.goal = None
         self.start = None
         self.angle = None

@@ -92,13 +92,14 @@ class Vision:
             tag_positions['bottom_left']
         ], dtype="float32")
 
-        print(f"Detected corners: {corners}")
-
-        vision.calculate_scale(corners)   # Calculate the scale (pixels per centimeter)
+        print(self.image.shape)
 
 
-        output_width = 1000
-        output_height = 700
+        self.calculate_scale(corners)   # Calculate the scale (pixels per centimeter)
+
+
+        output_width = 1200
+        output_height = 800
         dst = np.array([
             [0, 0],  # Top-left corner
             [output_width - 1, 0],  # Top-right corner
@@ -109,6 +110,8 @@ class Vision:
         # Perform perspective transform
         transform_matrix = cv2.getPerspectiveTransform(corners, dst)
         cropped_image = cv2.warpPerspective(self.image, transform_matrix, (output_width, output_height))
+
+        cv2.imshow("Cropped Image", transform_matrix)
 
         self.croped_image = cropped_image
 
@@ -180,6 +183,8 @@ class Vision:
         # Calculate the scale factors
         scale_x = target_width / width
         scale_y = self.target_height / height
+        print(self.goal, "goal")
+        print(scale_x, scale_y, "scale")
 
         # Resize the image
         resized_frame = cv2.resize(frame, (target_width, self.target_height), interpolation=cv2.INTER_AREA)
@@ -187,6 +192,7 @@ class Vision:
         # Adjust the goal and start coordinates if they exist
         if self.goal:
             self.goal = (int(self.goal[0] * scale_x), int(self.goal[1] * scale_y))
+            print(self.goal, "goal")
         if self.start:
             self.start = (int(self.start[0] * scale_x), int(self.start[1] * scale_y))
 
@@ -194,6 +200,12 @@ class Vision:
         if self.pixel_to_cm_scale:
             self.pixel_to_cm_scale *= scale_x  # Assuming uniform scaling
             return resized_frame
+        
+
+
+
+
+
 
     def find_goal(self):
         """
@@ -201,7 +213,7 @@ class Vision:
         and replace the detected red region with white pixels.
 
         Updates:
-        - self.goal: Tuple of (x, y) coordinates representing the center of the red region.
+        - self.goal: Tuple of (y, x) coordinates representing the center of the red region.
         """
         if self.croped_image is None:
             raise ValueError("No cropped image available. Run detect_and_crop first.")
@@ -234,18 +246,30 @@ class Vision:
         # Calculate the center of the largest contour
         moments = cv2.moments(largest_contour)
         if moments["m00"] != 0:
-            cx = int(moments["m10"] / moments["m00"])
-            cy = int(moments["m01"] / moments["m00"])
-            self.goal = (cx, cy)
-            print(f"Goal detected")
+            cx = int(moments["m10"] / moments["m00"])  # x-coordinate (horizontal position)
+            cy = int(moments["m01"] / moments["m00"])  # y-coordinate (vertical position)
+            self.goal = (cy, cx)  # Store as (row, column) for consistency
+            print(f"Goal detected at: {self.goal}")
         else:
             self.goal = None
             print("Red region detected, but could not calculate center.")
             return
 
-        # Replace the detected red region with white pixels in the original image
+        # Debug: Verify goal coordinates are within bounds
+        if 0 <= self.goal[1] < self.croped_image.shape[1] and 0 <= self.goal[0] < self.croped_image.shape[0]:
+            print(f"Coordinates {self.goal} are within bounds.")
+        else:
+            print(f"Coordinates {self.goal} are out of bounds!")
+
+        # Replace the detected red region with white pixels in the cropped image
         white_color = (255, 255, 255)
         cv2.drawContours(self.croped_image, [largest_contour], -1, white_color, thickness=cv2.FILLED)
+
+
+
+
+
+
 
     def find_start(self):
         """
@@ -351,19 +375,26 @@ class Vision:
             if not ret:
                 raise Exception("Error: Unable to capture image from the camera")
             
+            output_width = 1200  # Largeur réelle du terrain en cm
+            output_height = 800  # Hauteur réelle du terrain en cm
+
+            self.image = cv2.resize(self.image, (output_width, output_height))
+            
             if live:
                 self.set_image(frame)
 
-            vision.detect_and_crop()
+            self.detect_and_crop()
 
-            vision.find_goal()
+            #print(self.croped_image.shape)
 
-            vision.find_start()
+            self.find_goal()
 
-            vision.croped_image = vision._resize_image(vision.croped_image)
+            self.find_start()
+
+            self.croped_image = self._resize_image(self.croped_image)
 
 
-            vision.matrix = vision._generate_matrix(vision.croped_image)
+            self.matrix = self._generate_matrix(self.croped_image)
             time.sleep(max(0, self.frame_delay - (time.time() - start_time)))
 
         else:
@@ -380,6 +411,9 @@ class Vision:
     
     def getScale(self):
         return self.pixel_to_cm_scale
+    
+    def getMatrix(self):
+        return self.matrix
 
     def display_matrix(self):
         result = ""
@@ -393,7 +427,7 @@ class Vision:
 
     def display_all(self):
         self.display_image()
-        #self.display_matrix()
+        self.display_matrix()
         print(self.matrix.shape)
         if self.start is not None and self.angle is not None:
             print(f"Start: {self.start}, Angle: {self.angle:.2f} rad")
@@ -405,7 +439,7 @@ class Vision:
         else:
             print("Goal not detected.")
         if self.pixel_to_cm_scale is not None:
-            print(f"pixel-to-cm scale: {vision.pixel_to_cm_scale:.2f} cells/cm")
+            print(f"pixel-to-cm scale: {self.pixel_to_cm_scale:.2f} cells/cm")
 
 
     def release(self):
@@ -416,38 +450,39 @@ class Vision:
         cv2.destroyAllWindows()
 
 
+if __name__ == "__main__":
+    try:
+        image_path1 = "images/IMG_7018.jpeg"
+        image_path2 = "images/IMG_7020.jpeg"
+        image_path3 = "images/IMG_7028.jpeg"
+        vision = Vision(fps=3,target_height=80, default_image_path=image_path3)
+
+        vision.update_image(live=False)
+    
+        vision.display_all()
+
+        if cv2.waitKey(0) & 0xFF == ord('q'):  # Close the window when 'q' is pressed
+            pass
+    finally:
+        vision.release()
+
+
+
 # if __name__ == "__main__":
 #     try:
 #         image_path1 = "images/IMG_7018.jpeg"
 #         image_path2 = "images/IMG_7020.jpeg"
 #         vision = Vision(fps=3,target_height=200, default_image_path=image_path2)
 
-#         vision.update_image(live=False)
-    
-#         vision.display_all()
+#         while True:
 
-#         if cv2.waitKey(0) & 0xFF == ord('q'):  # Close the window when 'q' is pressed
-#             pass
-#     finally:
-#         vision.release()
-
-
-
-if __name__ == "__main__":
-    try:
-        image_path1 = "images/IMG_7018.jpeg"
-        image_path2 = "images/IMG_7020.jpeg"
-        vision = Vision(fps=3,target_height=200, default_image_path=image_path2)
-
-        while True:
-
-            vision.update_image()
+#             vision.update_image()
 
             
-            vision.display_all()
+#             vision.display_all()
 
 
-            if cv2.waitKey(1) & 0xFF == ord('q'):  # Close the window when 'q' is pressed
-                pass
-    finally:
-        vision.release()
+#             if cv2.waitKey(1) & 0xFF == ord('q'):  # Close the window when 'q' is pressed
+#                 pass
+#     finally:
+#         vision.release()
