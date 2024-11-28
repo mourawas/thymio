@@ -1,19 +1,23 @@
 import cv2
-import numpy as np
 import time
+from pupil_apriltags import Detector
+import numpy as np
 from colorama import Fore, Style
 
 
 class Vision:
-    def __init__(self, target_height=10, fps=10, threshold=128):
+    def __init__(self, target_height=10, fps=10, threshold=128, tag_size_cm=5, default_image_path=None):
         """
-        Initialize the Vision class with default settings.
+        Initialize the Vision class with camera settings and a default image.
+
+        Parameters:
+        - fps: Frames per second for controlling capture speed.
+        - default_image_path: Path to an image file to use as default if the camera is not accessible.
         """
         self.camera = cv2.VideoCapture(0)
-        if not self.camera.isOpened():
-            raise Exception("Error: Unable to access the camera")
 
         self.target_height = target_height
+        self.tag_size_cm = tag_size_cm  # Size of one side of the tag in centimeters
         self.fps = fps
         self.threshold = threshold
         self.frame_delay = 1 / fps
@@ -22,34 +26,281 @@ class Vision:
         self.goal = None
         self.start = None
         self.angle = None
+        self.crop_corners = None
+        self.pixel_to_cm_scale = None  
 
-    def update(self):
+        # Load a default image if provided
+        if default_image_path:
+            self.set_image(cv2.imread(default_image_path))
+
+    def set_image(self, image):
         """
-        Capture a new frame and update the matrix with colors for start and goal.
+        Manually set an image to be processed (useful when the camera is not available).
         """
-        start_time = time.time()
+        if image is not None:
+            self.image = image
+        else:
+            raise ValueError("The provided image is None.")
+
+    def capture_image(self):
+        """
+        Capture a single frame from the camera.
+        """
         ret, frame = self.camera.read()
-        if not ret:
-            raise Exception("Error: Unable to capture image from the camera")
+        if ret:
+            return frame
+        else:
+            raise Exception("Error: Unable to capture image from the camera.")
 
-        self.image = frame
-        resized_frame = self._resize_image(frame)
-        self.matrix = self._generate_matrix(resized_frame)
-        hsv_frame = cv2.cvtColor(resized_frame, cv2.COLOR_BGR2HSV)
+    def detect_and_crop(self):
+        """
+        Detect AprilTags and crop the image based on the detected corners.
 
-        self.goal = self._find_color(hsv_frame, [([0, 70, 50], [10, 255, 255]), ([170, 70, 50], [180, 255, 255])])
-        self.start, self.angle = self._find_start(hsv_frame)
+        Parameters:
+        - display: If True, display the detected tags on the image.
 
-        #self._update_matrix_with_colors()
-        time.sleep(max(0, self.frame_delay - (time.time() - start_time)))
+        Returns:
+        - cropped_image: The cropped and perspective-transformed image.
+        """
+        if self.image is None:
+            raise ValueError("No image available for processing.")
+
+        gray = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
+        detector = Detector(families="tagStandard41h12")
+        results = detector.detect(gray)
+
+        # Debug: Affichez tous les IDs détectés
+        # print(f"Tag IDs: {[result.tag_id for result in results]}")
+
+        # Check if at least 4 tags are detected
+        if len(results) < 4:
+            print(f"Warning: Only {len(results)} tags detected. Cannot crop the image.")
+            self.croped_image = self.image
+            return None
+        print(f"Detected {len(results)} tags.")
+
+        # Map tags to corners (top-left, top-right, bottom-left, bottom-right)
+        tag_positions = self._parse_tag_positions(results)
+        if len(tag_positions) < 4:
+            raise Exception("Error: Failed to identify all four corner tags.")
+
+        # Define the corners of the rectangle in the source image
+        corners = np.array([
+            tag_positions['top_left'],
+            tag_positions['top_right'],
+            tag_positions['bottom_right'],
+            tag_positions['bottom_left']
+        ], dtype="float32")
+
+        print(f"Detected corners: {corners}")
+
+        vision.calculate_scale(corners)   # Calculate the scale (pixels per centimeter)
+
+
+        output_width = 1000
+        output_height = 700
+        dst = np.array([
+            [0, 0],  # Top-left corner
+            [output_width - 1, 0],  # Top-right corner
+            [output_width - 1, output_height - 1],  # Bottom-right corner
+            [0, output_height - 1]  # Bottom-left corner
+        ], dtype="float32")
+
+        # Perform perspective transform
+        transform_matrix = cv2.getPerspectiveTransform(corners, dst)
+        cropped_image = cv2.warpPerspective(self.image, transform_matrix, (output_width, output_height))
+
+        self.croped_image = cropped_image
+
+    def _parse_tag_positions(self, results):
+        """
+        Identify positions of detected AprilTags as corners.
+
+        Parameters:
+        - results: List of detected tags.
+
+        Returns:
+        - tag_positions: Dictionary mapping corner names to tag centers.
+        """
+        centers = {result.tag_id: result.center for result in results}
+
+        sorted_by_y = sorted(centers.items(), key=lambda x: x[1][1])  # Sort by vertical position (Y-axis)
+
+
+        # Split into top and bottom halves
+        top_tags = sorted(sorted_by_y[:2], key=lambda x: x[1][0])  # Top 2 tags sorted by X-axis
+        bottom_tags = sorted(sorted_by_y[2:], key=lambda x: x[1][0])  # Bottom 2 tags sorted by X-axis
+
+        # Check if we have enough tags
+        if len(top_tags) < 2 or len(bottom_tags) < 2:
+            raise Exception("Error: Not enough tags detected to identify all four corners.")
+
+        return {
+            "top_left": top_tags[0][1],
+            "top_right": top_tags[1][1],
+            "bottom_left": bottom_tags[0][1],
+            "bottom_right": bottom_tags[1][1]
+        }
+
+    def calculate_scale(self, corners):
+        """
+        Calculate the scale (pixels per centimeter) based on detected tag corners.
+
+        Parameters:
+        - corners: Array of tag corners in the form [(x1, y1), (x2, y2), ...]
+
+        Updates:
+        - self.pixel_to_cm_scale: Number of pixels per centimeter.
+        """
+        if corners.shape[0] < 4:
+            raise ValueError("Not enough corners to calculate scale.")
+
+        # Calculate distances between adjacent corners
+        dist_top = np.linalg.norm(corners[0] - corners[1])  # Top side (top_left to top_right)
+        dist_right = np.linalg.norm(corners[1] - corners[2])  # Right side (top_right to bottom_right)
+        dist_bottom = np.linalg.norm(corners[2] - corners[3])  # Bottom side (bottom_right to bottom_left)
+        dist_left = np.linalg.norm(corners[3] - corners[0])  # Left side (bottom_left to top_left)
+
+        # Average the distances to account for potential perspective distortion
+        avg_dist = (dist_top + dist_right + dist_bottom + dist_left) / 4
+
+        # Compute the scale (pixels per centimeter)
+        self.pixel_to_cm_scale = avg_dist / self.tag_size_cm
+        print(f"Scale calculated: {self.pixel_to_cm_scale:.2f} pixels/cm")
+
 
     def _resize_image(self, frame):
         """
-        Resize the input frame while keeping the aspect ratio.
+        Resize the input frame while keeping the aspect ratio,
+        and adjust the coordinates of the goal, start, and scale accordingly.
         """
         height, width, _ = frame.shape
         target_width = int(self.target_height * (width / height))
-        return cv2.resize(frame, (target_width, self.target_height), interpolation=cv2.INTER_AREA)
+
+        # Calculate the scale factors
+        scale_x = target_width / width
+        scale_y = self.target_height / height
+
+        # Resize the image
+        resized_frame = cv2.resize(frame, (target_width, self.target_height), interpolation=cv2.INTER_AREA)
+
+        # Adjust the goal and start coordinates if they exist
+        if self.goal:
+            self.goal = (int(self.goal[0] * scale_x), int(self.goal[1] * scale_y))
+        if self.start:
+            self.start = (int(self.start[0] * scale_x), int(self.start[1] * scale_y))
+
+        # Adjust the pixel-to-centimeter scale
+        if self.pixel_to_cm_scale is not None:
+            # Scale must be adjusted based on the new scale factor
+            self.pixel_to_cm_scale /= scale_x  # Assuming uniform scaling (scale_x == scale_y)
+
+        return resized_frame
+
+    def find_goal(self):
+        """
+        Detect the goal (red region) in the cropped image, save its center coordinates,
+        and replace the detected red region with white pixels.
+
+        Updates:
+        - self.goal: Tuple of (x, y) coordinates representing the center of the red region.
+        """
+        if self.croped_image is None:
+            raise ValueError("No cropped image available. Run detect_and_crop first.")
+
+        # Convert the cropped image to HSV color space
+        hsv_image = cv2.cvtColor(self.croped_image, cv2.COLOR_BGR2HSV)
+
+        # Define HSV range for red color (both lower and upper ranges due to HSV wrap-around)
+        lower_red1 = np.array([0, 70, 50])
+        upper_red1 = np.array([10, 255, 255])
+        lower_red2 = np.array([170, 70, 50])
+        upper_red2 = np.array([180, 255, 255])
+
+        # Create masks for red regions
+        mask1 = cv2.inRange(hsv_image, lower_red1, upper_red1)
+        mask2 = cv2.inRange(hsv_image, lower_red2, upper_red2)
+        red_mask = cv2.bitwise_or(mask1, mask2)
+
+        # Find contours in the red mask
+        contours, _ = cv2.findContours(red_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        if not contours:
+            print("No red region detected.")
+            self.goal = None
+            return
+
+        # Find the largest red contour
+        largest_contour = max(contours, key=cv2.contourArea)
+
+        # Calculate the center of the largest contour
+        moments = cv2.moments(largest_contour)
+        if moments["m00"] != 0:
+            cx = int(moments["m10"] / moments["m00"])
+            cy = int(moments["m01"] / moments["m00"])
+            self.goal = (cx, cy)
+            print(f"Goal detected")
+        else:
+            self.goal = None
+            print("Red region detected, but could not calculate center.")
+            return
+
+        # Replace the detected red region with white pixels in the original image
+        white_color = (255, 255, 255)
+        cv2.drawContours(self.croped_image, [largest_contour], -1, white_color, thickness=cv2.FILLED)
+
+    def find_start(self):
+        """
+        Detect the start point based on the 'tag36h11' AprilTag and update the image.
+        Updates:
+        - self.start: Tuple of (x, y) coordinates representing the center of the tag.
+        - self.angle: Orientation angle in radians (circle trigonométrique).
+        """
+        if self.croped_image is None:
+            raise ValueError("No cropped image available. Run detect_and_crop first.")
+
+        # Convert the cropped image to grayscale for tag detection
+        gray_image = cv2.cvtColor(self.croped_image, cv2.COLOR_BGR2GRAY)
+        
+        # Detect 'tag36h11' tags
+        detector = Detector(families="tag36h11")
+        results = detector.detect(gray_image)
+
+        if not results:
+            print("No 'tag36h11' tags detected.")
+            self.start = None
+            self.angle = None
+            return
+
+        # Assuming we are interested in the first detected tag (modify if multiple tags exist)
+        tag = results[0]
+
+        # Calculate the center of the tag
+        cx, cy = int(tag.center[0]), int(tag.center[1])
+        self.start = (cx, cy)
+
+        # Calculate the orientation angle
+        # Use two corners (ptA, ptB) to define the orientation
+        ptA = tag.corners[0]  # Corner A
+        ptB = tag.corners[1]  # Corner B (next to A)
+        dx, dy = ptB[0] - ptA[0], ptB[1] - ptA[1]
+        self.angle = (np.arctan2(dy, dx) - np.pi/2 ) % (2 * np.pi)  # Angle in radians (0 to 2*pi)
+
+        print(f"Start detected")
+
+        # Replace the pixels corresponding to the tag with white in the cropped image
+        white_color = (255, 255, 255)
+        corners = np.array(tag.corners, dtype=np.int32)  # Convert corners to integer format
+        cv2.fillPoly(self.croped_image, [corners], white_color)
+
+        # Optionally visualize the start point and orientation
+        # if self.start:
+        #     cv2.circle(self.croped_image, self.start, 10, (0, 255, 0), -1)  # Green circle for the start
+        #     cv2.line(self.croped_image, (int(ptA[0]), int(ptA[1])), (int(ptB[0]), int(ptB[1])), (255, 0, 0), 2)  # Blue line for orientation
+
+
+
+
 
     def _generate_matrix(self, resized_frame):
         """
@@ -59,152 +310,127 @@ class Vision:
         _, binary_mask = cv2.threshold(gray_frame, self.threshold, 255, cv2.THRESH_BINARY)
         return np.where(binary_mask == 255, 0, -1)
 
-    def _find_color(self, hsv_frame, ranges):
+
+    def display_image(self):
         """
-        Find the largest contour of a given color range.
+        Display the image in a window.
         """
-        mask = sum(cv2.inRange(hsv_frame, np.array(lower), np.array(upper)) for lower, upper in ranges)
-        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        if self.croped_image is not None:
+            cv2.imshow("Image", self.croped_image)
+        elif self.image is not None:
+            cv2.imshow("Original (without croped) Image", self.image)
+        else:
+            raise Exception("No image to display. Call set_image() first.")
 
-        if contours:
-            largest = max(contours, key=cv2.contourArea)
-            moments = cv2.moments(largest)
-            if moments["m00"] != 0:
-                cx, cy = int(moments["m10"] / moments["m00"]), int(moments["m01"] / moments["m00"])
-                return (cx, cy)
-        return None
 
-    def _find_start(self, hsv_frame):
+    def update_image(self, live=True):
         """
-        Detect the start (green and blue regions) and compute the orientation angle.
-
-        :return: Tuple (start position, angle in degrees) or (None, None) if not found.
+        Update the image displayed in the window.
         """
-        lower_blue = np.array([85, 50, 50])
-        upper_blue = np.array([135, 255, 255])
-        lower_green = np.array([40, 50, 50])
-        upper_green = np.array([80, 255, 255])
+        if self.image is not None:
+            start_time = time.time()
 
-        mask_blue = cv2.inRange(hsv_frame, lower_blue, upper_blue)
-        mask_green = cv2.inRange(hsv_frame, lower_green, upper_green)
+            ret, frame = self.camera.read()
+            if not ret:
+                raise Exception("Error: Unable to capture image from the camera")
+            
+            if live:
+                self.set_image(frame)
 
-        contours_blue, _ = cv2.findContours(mask_blue, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        contours_green, _ = cv2.findContours(mask_green, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            vision.detect_and_crop()
 
-        if contours_blue and contours_green:
-            largest_blue = max(contours_blue, key=cv2.contourArea)
-            largest_green = max(contours_green, key=cv2.contourArea)
+            vision.find_goal()
 
-            moments_blue = cv2.moments(largest_blue)
-            moments_green = cv2.moments(largest_green)
+            vision.find_start()
 
-            if moments_blue["m00"] != 0 and moments_green["m00"] != 0:
-                cx_blue, cy_blue = int(moments_blue["m10"] / moments_blue["m00"]), int(moments_blue["m01"] / moments_blue["m00"])
-                cx_green, cy_green = int(moments_green["m10"] / moments_green["m00"]), int(moments_green["m01"] / moments_green["m00"])
+            vision.croped_image = vision._resize_image(vision.croped_image)
 
-                dx = cx_blue - cx_green
-                dy = cy_blue - cy_green
-                angle = -(np.arctan2(dy, dx) + 2 * np.pi) % (2 * np.pi)  # Angle in radians normalized to [0, 2π)
-                start_x = (cx_blue + cx_green) // 2
-                start_y = (cy_blue + cy_green) // 2
 
-                return (start_x, start_y), angle
+            vision.matrix = vision._generate_matrix(vision.croped_image)
+            time.sleep(max(0, self.frame_delay - (time.time() - start_time)))
 
-        return None, None
-
-    def _update_matrix_with_colors(self):
-        """
-        Update the matrix with specific values for start and goal.
-        """
-        # Reset the matrix areas corresponding to start and goal
-        self.matrix[self.matrix == -2] = 0  # Reset blue regions
-        self.matrix[self.matrix == -3] = 0  # Reset red regions
-
-        # Update the matrix with new start and goal positions
-        if self.start:
-            x, y = self.start
-            self.matrix[y, x] = -2  # Start marked as -2
-        if self.goal:
-            x, y = self.goal
-            self.matrix[y, x] = -3  # Goal marked as -3
-
-    def get_matrix(self):
-        """
-        Get the current color matrix. """
-        if self.matrix is None:
-            raise Exception("Matrix has not been initialized. Call update() first.")
-        return self.matrix
-
-    def get_image(self):
-        """
-        Get the current image (frame).
-        """
-        if self.image is None:
-            raise Exception("Image has not been initialized. Call update() first.")
-        return self.image
-
-    def get_goal(self):
-        """
-        Get the position of the goal (center of the largest red area).
-        """
-        return self.goal
-
-    def get_start(self):
-        """
-        Get the position of the start (center of the detected region).
-        """
+        else:
+            raise Exception("No image to update. Call set_image() first.")
+        
+    def getStart(self):
         return self.start
-
-    def get_angle(self):
-        """
-        Get the orientation angle of the detected start.
-        """
+    
+    def getGoal(self):
+        return self.goal
+    
+    def getAngle(self):
         return self.angle
+    
+    def getScale(self):
+        return self.pixel_to_cm_scale
 
     def display_matrix(self):
-        """
-        Print the matrix with consistent spacing and colors in the console.
-        """
         result = ""
         for row in self.matrix:
             result += "".join(
-                f"{Fore.BLUE}{x:3} " if x == -2 else
-                f"{Fore.RED}{x:3} " if x == -3 else
                 f"{Fore.MAGENTA}{x:3} " if x == -1 else
                 f"{Fore.WHITE}{x:3} "
                 for x in row
             ) + "\n"
         print(result + Style.RESET_ALL)
 
-    def display_info(self):
-        """
-        Display the detected goal and start positions with angle.
-        """
-        print(f"Goal position: {self.get_goal()}" if self.get_goal() else "Goal not detected")
-        if self.get_start():
-            print(f"Start position: {self.get_start()}, Angle: {self.get_angle():.2f}°")
+    def display_all(self):
+        self.display_image()
+        self.display_matrix()
+        if self.start is not None and self.angle is not None:
+            print(f"Start: {self.start}, Angle: {self.angle:.2f} rad")
         else:
-            print("Start not detected")
-        cv2.imshow("Captured Image", self.get_image())
+            print("Start not detected.")
+
+        if self.goal is not None:
+            print(f"Goal: {self.goal}")
+        else:
+            print("Goal not detected.")
+        if self.pixel_to_cm_scale is not None:
+            print(f"pixel-to-cm scale: {vision.pixel_to_cm_scale:.2f} cells/cm")
+
 
     def release(self):
         """
-        Release the camera resource.
+        Release the camera resource and close any OpenCV windows.
         """
         self.camera.release()
         cv2.destroyAllWindows()
 
 
+# if __name__ == "__main__":
+#     try:
+#         image_path1 = "IMG_7018.jpeg"
+#         image_path2 = "IMG_7020.jpeg"
+#         vision = Vision(fps=3,target_height=100, default_image_path=image_path2)
+
+#         vision.update_image(live=False)
+    
+#         vision.display_all()
+
+#         if cv2.waitKey(0) & 0xFF == ord('q'):  # Close the window when 'q' is pressed
+#             pass
+#     finally:
+#         vision.release()
+
+
+
 if __name__ == "__main__":
     try:
-        vision = Vision(target_height=20, fps=20, threshold=128)
+        image_path = "IMG_7017.jpeg"
+        image_path1 = "IMG_7018.jpeg"
+        image_path2 = "IMG_7020.jpeg"
+        vision = Vision(fps=3,target_height=200, default_image_path=image_path2)
 
         while True:
-            vision.update()
-            vision.display_matrix()
-            vision.display_info()
 
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
+            vision.update_image()
+
+            
+            vision.display_all()
+
+
+            if cv2.waitKey(1) & 0xFF == ord('q'):  # Close the window when 'q' is pressed
+                pass
     finally:
         vision.release()
