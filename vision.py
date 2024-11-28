@@ -94,7 +94,7 @@ class Vision:
 
         print(f"Detected corners: {corners}")
 
-        vision.calculate_scale(corners)   # Calculate the scale (pixels per centimeter)
+        self.calculate_scale(corners)   # Calculate the scale (pixels per centimeter)
 
 
         output_width = 1000
@@ -354,16 +354,16 @@ class Vision:
             if live:
                 self.set_image(frame)
 
-            vision.detect_and_crop()
+            self.detect_and_crop()
 
-            vision.find_goal()
+            self.find_goal()
 
-            vision.find_start()
+            self.find_start()
 
-            vision.croped_image = vision._resize_image(vision.croped_image)
+            self.croped_image = self._resize_image(self.croped_image)
 
 
-            vision.matrix = vision._generate_matrix(vision.croped_image)
+            self.matrix = self._generate_matrix(self.croped_image)
             time.sleep(max(0, self.frame_delay - (time.time() - start_time)))
 
         else:
@@ -380,6 +380,9 @@ class Vision:
     
     def getScale(self):
         return self.pixel_to_cm_scale
+    
+    def getMatrix(self):
+        return self.matrix
 
     def display_matrix(self):
         result = ""
@@ -405,7 +408,7 @@ class Vision:
         else:
             print("Goal not detected.")
         if self.pixel_to_cm_scale is not None:
-            print(f"pixel-to-cm scale: {vision.pixel_to_cm_scale:.2f} cells/cm")
+            print(f"pixel-to-cm scale: {self.pixel_to_cm_scale:.2f} cells/cm")
 
 
     def release(self):
@@ -416,38 +419,39 @@ class Vision:
         cv2.destroyAllWindows()
 
 
+if __name__ == "__main__":
+    try:
+        image_path1 = "images/IMG_7018.jpeg"
+        image_path2 = "images/IMG_7020.jpeg"
+        image_path3 = "images/IMG_7028.jpeg"
+        vision = Vision(fps=3,target_height=200, default_image_path=image_path3)
+
+        vision.update_image(live=False)
+    
+        vision.display_all()
+
+        if cv2.waitKey(0) & 0xFF == ord('q'):  # Close the window when 'q' is pressed
+            pass
+    finally:
+        vision.release()
+
+
+
 # if __name__ == "__main__":
 #     try:
 #         image_path1 = "images/IMG_7018.jpeg"
 #         image_path2 = "images/IMG_7020.jpeg"
 #         vision = Vision(fps=3,target_height=200, default_image_path=image_path2)
 
-#         vision.update_image(live=False)
-    
-#         vision.display_all()
+#         while True:
 
-#         if cv2.waitKey(0) & 0xFF == ord('q'):  # Close the window when 'q' is pressed
-#             pass
-#     finally:
-#         vision.release()
-
-
-
-if __name__ == "__main__":
-    try:
-        image_path1 = "images/IMG_7018.jpeg"
-        image_path2 = "images/IMG_7020.jpeg"
-        vision = Vision(fps=3,target_height=200, default_image_path=image_path2)
-
-        while True:
-
-            vision.update_image()
+#             vision.update_image()
 
             
-            vision.display_all()
+#             vision.display_all()
 
 
-            if cv2.waitKey(1) & 0xFF == ord('q'):  # Close the window when 'q' is pressed
-                pass
-    finally:
-        vision.release()
+#             if cv2.waitKey(1) & 0xFF == ord('q'):  # Close the window when 'q' is pressed
+#                 pass
+#     finally:
+#         vision.release()
