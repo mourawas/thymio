@@ -11,14 +11,14 @@ class LocalPlanning:
         self.__sensorScale = 200
 
     # the robot gathers the proximity sensor readings and has to determine if it has to use local planning
-    def is_local_planning(self, prox_horizontal):
+    def is_obstacle_avoidance(self, prox_horizontal):
         prox_horizontal = prox_horizontal[:5]
         for reading, thresh in zip(prox_horizontal, self.__thresholds):
             if reading > thresh:
                 return True
         return False
 
-    def local_planning(self, prox_horizontal):
+    def obstacle_avoidance(self, prox_horizontal):
         # if the robot is in front of an obstacle, it will turn right
         wl = self.__speedDuringAvoidance
         wr = self.__speedDuringAvoidance

@@ -45,13 +45,14 @@ We also attached 4 AprilTags on the 4 corners of the environment in order to str
 - The **filtering** module implements a Kalman filter in order to better localize the robot. It predicts the robots position given the movements made and updates the prediction using data from the vision.
 
 #### Explanation of Implemented Python Classes
-- **localPlanning.py**: An important part in robot's navigation is the avoidance of unexpected obstacles that might be detecte while moving from the start position to the goal, following the global plan. The process of local planning consists of detecting the obstacles using the robots sensors and designing a more or less efficient plan to get around it, avoiding collisions, and get back on the predetermined global plan.  
+- **localPlanning.py**: An important part in robot's navigation is the avoidance of unexpected obstacles that might be detected while moving from the start position to the goal, following the global plan. The process of local planning consists of detecting the obstacles using the robots sensors and designing a more or less efficient plan to get around it, avoiding collisions, and get back on the predetermined global plan.  
     The Thymio robot features 5 horizontal proximity sensors it its front part (see Thyimio cheat sheet snippet) that can be used to detect obstacles using infrared technology. The range of values that the sensors return is [0, 4300], ranging from nothing detected to something detected at minimum distance from the sensor, and the updates come at a frequency of 10Hz.
     <p align="center">
         <img src="images/thymio_cheat_sheet1.png" width="800">
     </p>
-    It is possible to map the readings from the proximity sensors to the real world distance measurements in order to tune the local avoidance matrix. In order to do so, many measurements were taken with an obstacle at a known distance, for multiple distances, and then a linear interpolation allowed to find the function $f(sensor reading) = distance = {\alpha} * sensor_reading + {\betha}$ that maps sensor readings to obstacle distance.  
-    The mapping has been calculated to be: $distance = n * sensor_reading + m$
+    It is possible to map the readings from the proximity sensors to the real world distance measurements in order to tune the local avoidance matrix. In order to do so, many measurements were taken with an obstacle at a known distance, for multiple distances, and then a linear interpolation allowed to find the function $$f(\text{sensor reading}) = \text{distance} = \alpha \cdot \text{sensor\_reading} + \beta$$ that maps sensor readings to obstacle distance.  
+    The mapping has been calculated to be: $distance = n \cdot sensor\_reading + m$
+
     The following table shows the measurements that allowed to reconstruct the mapping:
 
     | Distance | Sensor Reading (average value) |
