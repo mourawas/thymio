@@ -48,8 +48,8 @@ class Kalman:
 
         # Variances of motors (Needed to compute Q)
         # Depends on which thymio
-        u1 = 19
-        u2 = 19
+        u1 = 13
+        u2 = 13
         self.U_var = np.diag([u1,u2])
 
         # Distance between the two wheels
@@ -60,7 +60,7 @@ class Kalman:
 
         # Speed from pwm to mm/s
         # Depends on which thymio
-        self.c = 43/100
+        self.c = 39/100
 
     def initialize_position(self, x, y, theta):
         self.E[0, 0] = x
