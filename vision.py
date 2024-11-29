@@ -338,10 +338,6 @@ class Vision:
             if not ret:
                 raise Exception("Error: Unable to capture image from the camera")
             
-            # output_width = 1200
-            # output_height = 800
-
-            # self.image = cv2.resize(self.image, (output_width, output_height))
             
             if live:
                 self.set_image(frame)

@@ -104,7 +104,7 @@ class ThymioControl:
     
     # check if the robot is kidnapped
     def amIKidnapped(self):
-        return math.sqrt(math.pow(self.__oldPos[0] - self.__pos[0]) + math.pow(self.__oldPos[1] - self.__pos[1])) > self.__kidnappingThresholdPosition or abs(self.__oldAngle - self.__angle) > self.__kidnappingThresholdAngle
+        return math.sqrt((self.__oldPos[0] - self.__pos[0])**2 + (self.__oldPos[1] - self.__pos[1])**2) > self.__kidnappingThresholdPosition or abs(self.__oldAngle - self.__angle) > self.__kidnappingThresholdAngle
     
     # move the robot along the path, using PD controller and costant linear speed
     def move_pd(self, position, angle):

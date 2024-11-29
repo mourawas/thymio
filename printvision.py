@@ -340,10 +340,6 @@ class Vision:
             if not ret:
                 raise Exception("Error: Unable to capture image from the camera")
             
-            # output_width = 1200
-            # output_height = 800
-
-            # self.image = cv2.resize(self.image, (output_width, output_height))
             
             if live:
                 self.set_image(frame)
@@ -354,7 +350,7 @@ class Vision:
 
             self.find_start()
 
-            self.croped_image = self._resize_image(self.croped_image)
+            #self.croped_image = self._resize_image(self.croped_image)
 
 
             self.matrix = self._generate_matrix(self.croped_image)
@@ -452,6 +448,16 @@ class Vision:
             # Convert the binary matrix to an image
             binary_map = np.where(self.matrix == -1, 0, 255).astype(np.uint8)
             cv2.imwrite("demo_images/binary_obstacle_map.jpg", binary_map)
+
+        
+        aled_image = binary_map.copy()
+
+        cv2.circle(aled_image, self.start, 10, (0, 255, 0), -1)  # Green circle for start
+
+        # Highlight goal
+        corrected_goal = (self.goal[1], self.goal[0])  # Convert to (x, y)
+        cv2.circle(aled_image, corrected_goal, 10, (255, 0, 255), -1)  # Draw red circle
+        cv2.imwrite("demo_images/binary_obstacle_map_with_start_goal.jpg", aled_image)
 
 
 if __name__ == "__main__":
