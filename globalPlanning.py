@@ -8,6 +8,10 @@ class GlobalPlanning:
         self.start = None
         self.goal = None
         self.path = [] #Shortest path
+    
+    def set_magnification(self, scale, thymio_size):
+        self.magnification = math.ceil(thymio_size/scale/2)
+        print("GLOBAL PLANNING: magnification: ", self.magnification)
         
     #here is the function for the dijkstra algortihm
     def dijkstra(self, matrix, start, goal):
@@ -23,10 +27,6 @@ class GlobalPlanning:
         n = 0  # Distance from start
         grid = np.full_like(self.map, -4)  # Initialize grid with -4 (unmarked)
         current = None  # Current cell in path
-
-        print("Grid shape: ", grid.shape)
-        print("Start: ", self.start)
-        print("Goal: ", self.goal)
 
         # Make obstacles bigger
         obstacles = []

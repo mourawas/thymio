@@ -19,8 +19,8 @@ class Plotter:
         plt.imshow(self.map, cmap='gray', origin='lower')
         plt.plot(self.start[1], self.start[0], color='green', marker='o', label='Start')
         plt.plot(self.goal[1], self.goal[0], color='blue', marker='o', label='Goal')
-        plt.xticks(range(cols))
-        plt.yticks(range(rows))
+        plt.xticks(range(0, cols, 5))
+        plt.yticks(range(0, rows, 5))
         plt.grid(color='gray', linestyle='--', linewidth=0.5)
         plt.gca().invert_yaxis()  # Match grid orientation to the array
         plt.title("Grid Map with Start and Goal")
@@ -35,8 +35,8 @@ class Plotter:
         plt.imshow(map, cmap='gray', origin='lower')
         plt.plot(start[1], start[0], color='green', marker='o', label='Start')
         plt.plot(goal[1], goal[0], color='blue', marker='o', label='Goal')
-        plt.xticks(range(cols))
-        plt.yticks(range(rows))
+        plt.xticks(range(0, cols, 5))
+        plt.yticks(range(0, rows, 5))
         plt.grid(color='gray', linestyle='--', linewidth=0.5)
         plt.gca().invert_yaxis()
         plt.title("Grid Map with Start and Goal")
@@ -54,8 +54,8 @@ class Plotter:
         path_rows, path_cols = zip(*path)
         plt.plot(path_cols, path_rows, color='red', marker='o', label='Path')
         
-        plt.xticks(range(cols))
-        plt.yticks(range(rows))
+        plt.xticks(range(0, cols, 5))
+        plt.yticks(range(0, rows, 5))
         plt.grid(color='gray', linestyle='--', linewidth=0.5)
         plt.gca().invert_yaxis()  # Match grid orientation to the array
         plt.title("Grid Map with Path")
@@ -73,10 +73,10 @@ class Plotter:
             path_rows, path_cols = zip(*self.path)
             plt.scatter(path_cols, path_rows, color='blue', marker='s', label='Path')
 
-        plt.plot(x_trajectory, y_trajectory, color='red', marker='o', label='Trajectory')
+        plt.plot(y_trajectory, x_trajectory, color='red', marker='o', label='Trajectory')
         
-        plt.xticks(range(cols))
-        plt.yticks(range(rows))
+        plt.xticks(range(0, cols, 5))
+        plt.yticks(range(0, rows, 5))
         plt.grid(color='gray', linestyle='--', linewidth=0.5)
         plt.gca().invert_yaxis()
         plt.title("Grid Map with Trajectory")

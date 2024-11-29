@@ -53,28 +53,32 @@ class Kalman:
         self.U_var = np.diag([u1,u2])
 
         # Distance between the two wheels
-        self.d = 80
+        self.d = 93.5
 
         # Delta time 
-        self.lastKalman = time.time_ns()/10e8
+        self.lastKalman = time.time_ns()
 
         # Speed from pwm to mm/s
         # Depends on which thymio
         self.c = 0.3726
+        # Adjustment for the thymio's wheels differences
+        # Depends on which thymio
+        self.adj = 1.07
 
     def initialize_position(self, x, y, theta):
         self.E[0, 0] = x
         self.E[1, 0] = y
         self.E[2, 0] = theta
+        self.set_lastKalman_time()
 
     def get_state(self):
         return float(self.E[0, 0]), float(self.E[1, 0]), float(self.E[2, 0])
 
     def set_lastKalman_time(self):
-        self.lastKalman = time.time_ns()/10e8
+        self.lastKalman = time.time_ns()
 
 
-    def kalman_prediction(self, L_speed, R_speed):
+    def kalman_prediction(self, L_speed, R_speed, dt):
         
         # INPUT: (motors) L_speed, R_speed
 
@@ -84,8 +88,8 @@ class Kalman:
         # variances of the system.
         
         # Time between the last update/prediction and this time
-        deltaT = time.time_ns()/10e8 - self.lastKalman
-        print(deltaT)
+        deltaT = time.time_ns() - self.lastKalman
+        deltaT = deltaT/1e9 # Convert to seconds
 
         # Update speeds of the robot
         self.U = np.matrix([[L_speed],[R_speed]],dtype= 'float')
@@ -95,21 +99,21 @@ class Kalman:
         # which gives
         # Δx = (c/2)⋅(Rspeed+Lspeed)⋅cos(θ)⋅Δt
         # Δθ = ((c⋅Rspeed​−c⋅Lspeed​​)/b)⋅Δt
-        self.G = np.matrix([[0.5*math.cos(self.E[2])*self.c,0.5*math.cos(self.E[2])*self.c],
-                            [0.5*math.sin(self.E[2])*self.c,0.5*math.sin(self.E[2])*self.c],
-                            [1/self.d*self.c, -1/self.d*self.c]],dtype= 'float')
-        
+        self.G = np.matrix([[math.cos(self.E[2])*self.c/self.adj/2, math.cos(self.E[2])*self.c/2],
+                            [math.sin(self.E[2])*self.c/self.adj/2, math.sin(self.E[2])*self.c/2],
+                            [self.c/self.adj/self.d, -1*self.c/self.d]],dtype= 'float')
+
         # Predicted state of the robot AE+GU⋅Δt (slide 41)
-        self.E = np.dot(self.A, self.E) + np.dot(self.G, self.U)*deltaT
-        
+        self.E = self.A @ self.E + self.G @ self.U*dt
+
         # Uncertainty due to the motors G⋅Uvar⋅G'+I
-        R = np.dot(self.G, np.dot(self.U_var,np.transpose(self.G))) + np.eye(3)
+        R = self.G @ self.U_var @ self.G.T + np.eye(3)
         
         # Update the variance of the system APA'+R (slide 44)
-        self.P = np.dot(np.dot(self.A,self.P),np.transpose(self.A))+R
+        self.P = self.A @ self.P @ self.A.T + R
         
         # Update the time of the last kalman done to find deltaT
-        self.lastKalman = time.time_ns()/10e8
+        self.lastKalman = time.time_ns()
 
     def kalman_update(self, measurement):
 
@@ -138,4 +142,4 @@ class Kalman:
         self.P = np.dot((I-np.dot(K,self.H)),self.P)
         
         # Update the time of the last kalman done to find deltaT
-        self.lastKalman = time.time_ns()/10e8
+        self.lastKalman = time.time_ns()
