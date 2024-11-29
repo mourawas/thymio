@@ -1,4 +1,5 @@
 import math
+import numpy as np
 class ThymioControl:
     def __init__(self):
         # Thymio's pose and old pose
@@ -30,8 +31,8 @@ class ThymioControl:
         # constant linear speed
         self.__linearSpeed = 500
 
-        # conversion from Thymio wheel speed commands to mm/s
-        self.__thymioWheelSpeedConversion = 0.43 # (mm/s)/pwd
+        # conversion from mm/s to Thymio wheel speed commands
+        self.__thymioWheelSpeedConversion = 64 # pwm/(mm/s)
 
         # constant proportional parameter for transforming angle into rotational speed
         self.__proportionalGain = 0.7
@@ -40,7 +41,7 @@ class ThymioControl:
         self.__derivativeGain = 0.5
 
         # adjustment for the thymio's wheels differences
-        self.__wheelsAdjustment = 1.1
+        self.__wheelsAdjustment = 1.05
 
         # cell to mm conversion
         self.__cellToMm = 100 # 1 cell = self.__cellToMm mm
@@ -69,7 +70,8 @@ class ThymioControl:
     def set_path(self, path):
         self.__path = []
         for position in path:
-            self.__path.append([position[1] * self.__cellToMm, position[0] * self.__cellToMm])
+            position = np.array(position)
+            self.__path.append(tuple([position[1] * self.__cellToMm, position[0] * self.__cellToMm]))
         # remove the cells that are in a straight line
         self.__reduce_path()
         self.__step = 1
@@ -203,14 +205,14 @@ class ThymioControl:
     
     # differential drive model, using Thymio's geometry
     def differentialDrive(self, v, w):
-        wl = (1 / self.__thymioWheelSpeedConversion) * self.__wheelsAdjustment * (v - self.__lenght * w / 2) / self.__radius
-        wr = (1 / self.__thymioWheelSpeedConversion) * (v + self.__lenght * w / 2) / self.__radius
-        return wl, wr
+        wl = self.__thymioWheelSpeedConversion * self.__wheelsAdjustment * (v - self.__lenght * w / 2) / self.__radius
+        wr = self.__thymioWheelSpeedConversion * (v + self.__lenght * w / 2) / self.__radius
+        return -wl, -wr
     
     # inverse differential drive model, using Thymio's geometry
     def inverseDifferentialDrive(self, wl, wr):
-        w = ((wr - wl/self.__wheelsAdjustment) * self.__radius * self.__thymioWheelSpeedConversion) / self.__lenght
-        v = ((wr + wl/self.__wheelsAdjustment) * self.__radius * self.__thymioWheelSpeedConversion) / 2
+        w = ((wr - wl/self.__wheelsAdjustment) * self.__radius / self.__thymioWheelSpeedConversion) / self.__lenght
+        v = ((wr + wl/self.__wheelsAdjustment) * self.__radius / self.__thymioWheelSpeedConversion) / 2
         return v, w
     
     # convert the speed from mm/s to cells/s

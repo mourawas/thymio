@@ -24,18 +24,22 @@ class GlobalPlanning:
         grid = np.full_like(self.map, -4)  # Initialize grid with -4 (unmarked)
         current = None  # Current cell in path
 
+        print("Grid shape: ", grid.shape)
+        print("Start: ", self.start)
+        print("Goal: ", self.goal)
+
         # Make obstacles bigger
         obstacles = []
-        for x in range(grid.shape[0]):
-            for y in range(grid.shape[1]):
-                if self.map[x, y] == -1:
-                    obstacles.append((x, y))
+        for row in range(grid.shape[0]):
+            for col in range(grid.shape[1]):
+                if self.map[row, col] == -1:
+                    obstacles.append((row, col))
         for obstacle in obstacles:
             neighbors = []
-            for dx in range(-self.magnification, self.magnification + 1):
-                for dy in range(-self.magnification, self.magnification + 1):
-                    if dx != 0 or dy != 0:  # Exclude the obstacle itself
-                        neighbors.append((obstacle[0] + dx, obstacle[1] + dy))
+            for drow in range(-self.magnification, self.magnification + 1):
+                for dcol in range(-self.magnification, self.magnification + 1):
+                    if drow != 0 or dcol != 0:  # Exclude the obstacle itself
+                        neighbors.append((obstacle[0] + drow, obstacle[1] + dcol))
             for neighbor in neighbors:
                 if (0 <= neighbor[0] < grid.shape[0]) and (0 <= neighbor[1] < grid.shape[1]):
                     self.map[neighbor] = -1
@@ -73,7 +77,7 @@ class GlobalPlanning:
                                 new_frontier.append(neighbor)
             if not new_frontier:
                 # No more cells to explore, and goal is unreachable
-                return None, matrix
+                return None
             frontier = new_frontier
     
         # Reconstruct the path
@@ -101,10 +105,13 @@ class GlobalPlanning:
                         
             if next_cell is None:
                 # No path found
-                return None, self.map
+                return None
             # Append next_cell to path
             self.path.append(next_cell)
             current = next_cell
         # Reverse the path
         self.path.reverse()
-        return self.path, self.map
+        return self.path
+
+    def get_matrix(self):
+        return self.map
