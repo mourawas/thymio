@@ -22,7 +22,7 @@ class Vision:
         self.threshold = threshold
         self.frame_delay = 1 / fps
         self.matrix = None
-        self.image = None 
+        self.image = None
         self.goal = None
         self.start = None
         self.angle = None
@@ -390,7 +390,7 @@ class Vision:
 
     def display_all(self):
         self.display_image()
-        #self.display_matrix()
+        self.display_matrix()
         print(f"Matrix shape: {self.matrix.shape}")
         if self.start is not None and self.angle is not None:
             print(f"Start: {self.start}, Angle: {self.angle:.2f} rad")
@@ -418,7 +418,7 @@ if __name__ == "__main__":
         image_path1 = "images/IMG_7018.jpeg"
         image_path2 = "images/IMG_7020.jpeg"
         image_path3 = "images/IMG_7028.jpeg"
-        vision = Vision(fps=3,target_height=80, default_image_path=image_path3)
+        vision = Vision(fps=3,target_height=30, default_image_path=image_path3)
 
         vision.update_image(live=False)
     
