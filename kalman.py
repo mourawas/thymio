@@ -60,7 +60,7 @@ class Kalman:
 
         # Speed from pwm to mm/s
         # Depends on which thymio
-        self.c = 39/100
+        self.c = 0.3726
 
     def initialize_position(self, x, y, theta):
         self.E[0, 0] = x
@@ -85,6 +85,7 @@ class Kalman:
         
         # Time between the last update/prediction and this time
         deltaT = time.time_ns()/10e8 - self.lastKalman
+        print(deltaT)
 
         # Update speeds of the robot
         self.U = np.matrix([[L_speed],[R_speed]],dtype= 'float')

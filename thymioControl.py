@@ -29,10 +29,10 @@ class ThymioControl:
         self.__angleThreshold = 0.1 # rad
 
         # constant linear speed
-        self.__linearSpeed = 500
+        self.__linearSpeed = 50 # mm/s
 
-        # conversion from mm/s to Thymio wheel speed commands
-        self.__thymioWheelSpeedConversion = 64 # pwm/(mm/s)
+        # conversion from Thymio wheel speed commands to mm/s
+        self.__thymioWheelSpeedConversion = 0.3726 # (mm/s)/pwm
 
         # constant proportional parameter for transforming angle into rotational speed
         self.__proportionalGain = 0.7
@@ -41,7 +41,7 @@ class ThymioControl:
         self.__derivativeGain = 0.5
 
         # adjustment for the thymio's wheels differences
-        self.__wheelsAdjustment = 1.05
+        self.__wheelsAdjustment = 1.07
 
         # cell to mm conversion
         self.__cellToMm = 100 # 1 cell = self.__cellToMm mm
@@ -51,7 +51,6 @@ class ThymioControl:
         
         # robot geometry
         self.__lenght = 93 # mm, distance between the wheels
-        self.__radius = 22 # mm, radius of the wheels
 
     # timestep setter
     def set_timestep(self, timestep):
@@ -71,7 +70,7 @@ class ThymioControl:
         self.__path = []
         for position in path:
             position = np.array(position)
-            self.__path.append(tuple([position[1] * self.__cellToMm, position[0] * self.__cellToMm]))
+            self.__path.append((float(position[1] * self.__cellToMm), float(position[0] * self.__cellToMm)))
         # remove the cells that are in a straight line
         self.__reduce_path()
         self.__step = 1
@@ -92,7 +91,8 @@ class ThymioControl:
     def get_path_cells(self):
         new_path = []
         for position in self.__path:
-            new_path.append([position[1] / self.__cellToMm, position[0] / self.__cellToMm])
+            position = np.array(position)
+            new_path.append((float(position[1] / self.__cellToMm), float(position[0] / self.__cellToMm)))
         return new_path
     
     # update the pose of the robot, saving the old pose
@@ -205,14 +205,24 @@ class ThymioControl:
     
     # differential drive model, using Thymio's geometry
     def differentialDrive(self, v, w):
-        wl = self.__thymioWheelSpeedConversion * self.__wheelsAdjustment * (v - self.__lenght * w / 2) / self.__radius
-        wr = self.__thymioWheelSpeedConversion * (v + self.__lenght * w / 2) / self.__radius
-        return -wl, -wr
+        
+        # notice the inverted sign, because the map has the y axis inverted
+        vr = (v - w * self.__lenght / 2)
+        vl = (v + w * self.__lenght / 2)
+
+        wr = vr / self.__thymioWheelSpeedConversion
+        wl = vl * self.__wheelsAdjustment / self.__thymioWheelSpeedConversion
+
+        return int(wl), int(wr)
     
     # inverse differential drive model, using Thymio's geometry
     def inverseDifferentialDrive(self, wl, wr):
-        w = ((wr - wl/self.__wheelsAdjustment) * self.__radius / self.__thymioWheelSpeedConversion) / self.__lenght
-        v = ((wr + wl/self.__wheelsAdjustment) * self.__radius / self.__thymioWheelSpeedConversion) / 2
+        vr = wr * self.__thymioWheelSpeedConversion # mm/s from pwd
+        vl = wl * self.__thymioWheelSpeedConversion / self.__wheelsAdjustment # mm/s from pwd
+
+        v = (vr + vl) / 2
+        w = (vl - vr) / self.__lenght
+
         return v, w
     
     # convert the speed from mm/s to cells/s
