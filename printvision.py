@@ -110,6 +110,8 @@ class Vision:
         transform_matrix = cv2.getPerspectiveTransform(corners, dst)
         cropped_image = cv2.warpPerspective(self.image, transform_matrix, (output_width, output_height))
 
+        cv2.imshow("Cropped Image", transform_matrix)
+
         self.croped_image = cropped_image
 
     def _parse_tag_positions(self, results):
@@ -385,13 +387,10 @@ class Vision:
                 for x in row
             ) + "\n"
         print(result + Style.RESET_ALL)
-        # Convert the binary matrix to an image
-        binary_map = np.where(self.matrix == -1, 0, 255).astype(np.uint8)
-        cv2.imshow("Binary Matrix", binary_map)
 
     def display_all(self):
         self.display_image()
-        self.display_matrix()
+        #self.display_matrix()
         print(f"Matrix shape: {self.matrix.shape}")
         if self.start is not None and self.angle is not None:
             print(f"Start: {self.start}, Angle: {self.angle:.2f} rad")
@@ -414,15 +413,56 @@ class Vision:
         cv2.destroyAllWindows()
 
 
+
+    def save_demo_images(self):
+        """
+        Save the required demo images for the pipeline stages.
+        """
+        # Save the original image
+        if self.image is not None:
+            print("Saving images...")
+            cv2.imwrite("demo_images/original_image.jpg", self.image)
+
+        
+        cv2.imwrite("demo_images/whitened_regions.jpg", self.croped_image)
+
+        self.detect_and_crop()
+
+        # Save the cropped image
+        if self.croped_image is not None:
+            print("Saving cropped image...")
+            cv2.imwrite("demo_images/cropped_image.jpg", self.croped_image)
+
+        # Highlight the start and goal on the cropped image
+        if self.croped_image is not None and self.start is not None and self.goal is not None:
+            highlighted_image = self.croped_image.copy()
+            
+            # Highlight start
+            cv2.circle(highlighted_image, self.start, 10, (0, 255, 0), -1)  # Green circle for start
+
+            # Highlight goal
+            corrected_goal = (self.goal[1], self.goal[0])  # Convert to (x, y)
+            cv2.circle(highlighted_image, corrected_goal, 10, (255, 0, 255), -1)  # Draw red circle
+
+            cv2.imwrite("demo_images/start_goal_highlighted.jpg", highlighted_image)
+
+
+        # Save the final binary map
+        if self.matrix is not None:
+            # Convert the binary matrix to an image
+            binary_map = np.where(self.matrix == -1, 0, 255).astype(np.uint8)
+            cv2.imwrite("demo_images/binary_obstacle_map.jpg", binary_map)
+
+
 if __name__ == "__main__":
     try:
-        image_path1 = "images/IMG_7018.jpeg"
-        image_path2 = "images/IMG_7020.jpeg"
-        image_path = "images/original_image.jpeg"
-        vision = Vision(fps=3, threshold=100, target_height=80, default_image_path=image_path)
+        image_path3 = "images/original_image.jpeg"
+        vision = Vision(fps=3,threshold=75, target_height=250, default_image_path=image_path3)
 
         vision.update_image(live=False)
     
+        vision.save_demo_images()
+
         vision.display_all()
 
         if cv2.waitKey(0) & 0xFF == ord('q'):  # Close the window when 'q' is pressed
