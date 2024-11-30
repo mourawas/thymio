@@ -8,6 +8,10 @@ class ThymioControl:
         self.__oldPos = []
         self.__oldAngle = None
 
+        # Thymio's predicted pose, used for kidnapping detection
+        self.__pos_est = []
+        self.__angle_est = None
+
         # value of the timestep considered in the control loop
         # used for the derivative part of the controller
         self.__timeStep = 0
@@ -23,7 +27,7 @@ class ThymioControl:
         self.__kidnappingThresholdAngle = 30 # degrees
 
         # threshold for the robot to consider that it has reached a waypoint
-        self.__reachedThreshold = 100 # mm
+        self.__reachedThreshold = 50 # mm
 
         # threshold for the robot to consider that it has reached a desired orientation
         self.__angleThreshold = 0.1 # rad
@@ -44,7 +48,7 @@ class ThymioControl:
         self.__wheelsAdjustment = 1.07
 
         # cell to mm conversion
-        self.__cellToMm = 10 # 1 cell = self.__cellToMm mm
+        self.__cellToMm = 0 # 1 cell = self.__cellToMm mm
 
         # max value for angular speed when rotating
         self.__maxAngularSpeed = 2 * math.pi
@@ -53,7 +57,8 @@ class ThymioControl:
         self.__lenght = 93.5 # mm, distance between the wheels
 
     def set_scale(self, scale):
-        self.__cellToMm = scale
+        # scale is cells per mm, I want mm per cell
+        self.__cellToMm = 1 / scale
 
     # pose setter
     def set_pose(self, position, angle):
@@ -126,12 +131,16 @@ class ThymioControl:
     
     # check if the robot is kidnapped
     def amIKidnapped(self, position, angle):
-        print("THYMIO CONTROL: old pos: ", self.__oldPos)
-        print("THYMIO CONTROL: old angle: ", self.__oldAngle)
-        print("THYMIO CONTROL: pos: ", position)
-        print("THYMIO CONTROL: angle: ", angle)
+        print("THYMIO CONTROL: kidnapping predicted pos: ", self.__pos_est)
+        print("THYMIO CONTROL: kidnapping predicted angle: ", self.__angle_est)
+        print("THYMIO CONTROL: kidnapping pos: ", position)
+        print("THYMIO CONTROL: kidnapping angle: ", angle)
         pos = [float(position[0] * self.__cellToMm), float(position[1] * self.__cellToMm)]
-        return self.__oldPos != [] and self.__oldAngle != None and (math.sqrt((self.__oldPos[0] - pos[0])**2 + (self.__oldPos[1] - pos[1])**2) > self.__kidnappingThresholdPosition or abs(self.__oldAngle - angle) > self.__kidnappingThresholdAngle)
+        return self.__pos_est != [] and self.__angle_est != None and (math.sqrt((self.__pos_est[0] - pos[0])**2 + (self.__pos_est[1] - pos[1])**2) > self.__kidnappingThresholdPosition or abs(self.__angle_est - angle) > self.__kidnappingThresholdAngle)
+    
+    def set_pred(self, row, col, angle):
+        self.__pos_est = [row, col]
+        self.__angle_est = angle
     
     # move the robot along the path, using PD controller and costant linear speed
     def move_pd(self, position, angle, dt):

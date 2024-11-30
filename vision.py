@@ -6,7 +6,7 @@ from colorama import Fore, Style
 
 
 class Vision:
-    def __init__(self, target_height=10, fps=10, threshold=128, tag_size_mm=37, default_image_path=None):
+    def __init__(self, target_height=10, fps=10, threshold=128, tag_size_mm=36, default_image_path=None):
         """
         Initialize the Vision class with camera settings and a default image.
 
@@ -167,7 +167,7 @@ class Vision:
         # Average the distances to account for potential perspective distortion
         avg_dist = (dist_top + dist_right + dist_bottom + dist_left) / 4
 
-        # Compute the scale (pixels per centimeter)
+        # Compute the scale (pixels per millimeter)
         self.pixel_to_mm_scale = avg_dist / self.tag_size_mm
 
 
@@ -285,7 +285,7 @@ class Vision:
         apparent_size_pixels = (dist_top + dist_right + dist_bottom + dist_left) / 4
 
         self.pixel_to_mm_scale = apparent_size_pixels / self.tag_size_mm
-        #print(f"Scale calculated: {self.pixel_to_cm_scale:.2f} pixels/cm")
+        #print(f"Scale calculated: {self.pixel_to_cm_scale:.2f} pixels/mm")
 
 
         # Assuming we are interested in the first detected tag (modify if multiple tags exist)
@@ -411,7 +411,7 @@ class Vision:
         else:
             print("VISION: goal not detected.")
         if self.pixel_to_mm_scale is not None:
-            print(f"VISION: pixel-to-cm scale: {self.pixel_to_mm_scale:.2f} cells/cm")
+            print(f"VISION: pixel-to-mm scale: {self.pixel_to_mm_scale:.2f} cells/cm")
 
 
     def release(self):

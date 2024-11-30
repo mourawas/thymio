@@ -10,7 +10,10 @@ class GlobalPlanning:
         self.path = [] #Shortest path
     
     def set_magnification(self, scale, thymio_size):
-        self.magnification = math.ceil(thymio_size/scale/2)
+        # scale is cells/mm
+        # I want the magnification in cells
+        thymio_size = (thymio_size * 1.05) / 2 # 5% bigger than the real size, / 2 to consider only half the robot
+        self.magnification = math.ceil(thymio_size * scale)
         print("GLOBAL PLANNING: magnification: ", self.magnification)
         
     #here is the function for the dijkstra algortihm
