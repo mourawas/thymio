@@ -62,7 +62,7 @@ class Plotter:
         plt.legend()
         plt.show()
 
-    def plot_trajectory(self, x_trajectory, y_trajectory):
+    def plot_trajectory(self, row_trajectory, col_trajectory):
 
         # plot the trajectory on the map
         rows, cols = self.map.shape
@@ -73,7 +73,7 @@ class Plotter:
             path_rows, path_cols = zip(*self.path)
             plt.scatter(path_cols, path_rows, color='blue', marker='s', label='Path')
 
-        plt.plot(y_trajectory, x_trajectory, color='red', marker='o', label='Trajectory')
+        plt.plot(col_trajectory, row_trajectory, color='red', marker='o', label='Trajectory')
         
         plt.xticks(range(0, cols, 5))
         plt.yticks(range(0, rows, 5))

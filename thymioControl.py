@@ -29,7 +29,7 @@ class ThymioControl:
         self.__angleThreshold = 0.1 # rad
 
         # constant linear speed
-        self.__linearSpeed = 20 # mm/s
+        self.__linearSpeed = 100 # mm/s
 
         # conversion from Thymio wheel speed commands to mm/s
         self.__thymioWheelSpeedConversion = 0.3726 # (mm/s)/pwm
@@ -67,6 +67,10 @@ class ThymioControl:
     # pose getter
     def get_position(self):
         return self.__pos
+    
+    # angle getter
+    def get_angle(self):
+        return self.__angle
 
     # path setter
     def set_path(self, path):
@@ -108,12 +112,12 @@ class ThymioControl:
 
         new_path = [(round(x, 2), round(y, 2)) for x, y in new_path]
         return new_path
-    
+
     # update the pose of the robot, saving the old pose
     def update_pose(self, position, angle):
         self.__oldPos = self.__pos
         self.__oldAngle = self.__angle
-        self.__pos = [float(position[0] * self.__cellToMm), float(position[1] * self.__cellToMm)]
+        self.__pos = [position[0], position[1]]
         self.__angle = angle
         print("THYMIO CONTROL: old pos: ", self.__oldPos)
         print("THYMIO CONTROL: old angle: ", self.__oldAngle)
@@ -121,8 +125,13 @@ class ThymioControl:
         print("THYMIO CONTROL: angle: ", self.__angle)
     
     # check if the robot is kidnapped
-    def amIKidnapped(self):
-        return self.__oldPos != [] and self.__oldAngle != None and (math.sqrt((self.__oldPos[0] - self.__pos[0])**2 + (self.__oldPos[1] - self.__pos[1])**2) > self.__kidnappingThresholdPosition or abs(self.__oldAngle - self.__angle) > self.__kidnappingThresholdAngle)
+    def amIKidnapped(self, position, angle):
+        print("THYMIO CONTROL: old pos: ", self.__oldPos)
+        print("THYMIO CONTROL: old angle: ", self.__oldAngle)
+        print("THYMIO CONTROL: pos: ", position)
+        print("THYMIO CONTROL: angle: ", angle)
+        pos = [float(position[0] * self.__cellToMm), float(position[1] * self.__cellToMm)]
+        return self.__oldPos != [] and self.__oldAngle != None and (math.sqrt((self.__oldPos[0] - pos[0])**2 + (self.__oldPos[1] - pos[1])**2) > self.__kidnappingThresholdPosition or abs(self.__oldAngle - angle) > self.__kidnappingThresholdAngle)
     
     # move the robot along the path, using PD controller and costant linear speed
     def move_pd(self, position, angle, dt):
@@ -256,7 +265,7 @@ class ThymioControl:
     
     # convert the speed from mm/s to cells/s
     def convert_speed_cells(self, speed):
-        return speed / self.__cellToMm
+        return float(speed / self.__cellToMm)
     
     # return the distance between the wheels
     def get_wheel_distance(self):
@@ -264,7 +273,7 @@ class ThymioControl:
     
     # convert the distance from mm to cells
     def mm_to_cells(self, mm):
-        return mm / self.__cellToMm
+        return float(mm / self.__cellToMm)
     
     def cells_to_mm(self, cells):
-        return cells * self.__cellToMm
+        return float(cells * self.__cellToMm)
