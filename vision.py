@@ -76,13 +76,14 @@ class Vision:
         if len(results) < 4:
             print(f"VISION: warning: Only {len(results)} tags detected. Cannot crop the image.")
             self.croped_image = self.image
-            return None
+            return True
         print(f"VISION: detected {len(results)} tags.")
 
         # Map tags to corners (top-left, top-right, bottom-left, bottom-right)
         tag_positions = self._parse_tag_positions(results)
         if len(tag_positions) < 4:
-            raise Exception("VISION: Error: Failed to identify all four corner tags.")
+            print("VISION: Error: Failed to identify all four corner tags.")
+            return True
 
         # Define the corners of the rectangle in the source image
         corners = np.array([
@@ -111,6 +112,8 @@ class Vision:
         cropped_image = cv2.warpPerspective(self.image, transform_matrix, (output_width, output_height))
 
         self.croped_image = cropped_image
+
+        return False
 
     def _parse_tag_positions(self, results):
         """
@@ -342,16 +345,25 @@ class Vision:
             if live:
                 self.set_image(frame)
 
-            self.detect_and_crop()
+            obstruction = self.detect_and_crop()
 
-            self.find_goal()
+            if obstruction:
+                
+                self.start = None
 
-            self.find_start()
+                self.angle = None
 
-            self.croped_image = self._resize_image(self.croped_image)
+            else:
+
+                self.find_goal()
+
+                self.find_start()
+
+                self.croped_image = self._resize_image(self.croped_image)
+
+                self.matrix = self._generate_matrix(self.croped_image)
 
 
-            self.matrix = self._generate_matrix(self.croped_image)
             time.sleep(max(0, self.frame_delay - (time.time() - start_time)))
 
         else:
