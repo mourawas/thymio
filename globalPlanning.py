@@ -3,7 +3,7 @@ import math
 
 class GlobalPlanning:
     def __init__(self):
-        self.magnification = 2
+        self.magnification = 0
         self.map = None
         self.start = None
         self.goal = None
@@ -18,10 +18,6 @@ class GlobalPlanning:
         
     #here is the function for the dijkstra algortihm
     def dijkstra(self, matrix, start, goal):
-        #If current goal equal old goal we don't do the algorithm
-        if self.goal == goal:
-            return self.path
-        
         
         # Initialize variables
         self.map = matrix
