@@ -6,7 +6,7 @@ from colorama import Fore, Style
 
 
 class Vision:
-    def __init__(self, target_height=10, fps=10, threshold=128, tag_size_cm=3.7, default_image_path=None):
+    def __init__(self, target_height=10, fps=10, threshold=128, tag_size_mm=37, default_image_path=None):
         """
         Initialize the Vision class with camera settings and a default image.
 
@@ -17,7 +17,7 @@ class Vision:
         self.camera = cv2.VideoCapture(0)
 
         self.target_height = target_height
-        self.tag_size_cm = tag_size_cm  # Size of one side of the tag in centimeters
+        self.tag_size_mm = tag_size_mm  # Size of one side of the tag in centimeters
         self.fps = fps
         self.threshold = threshold
         self.frame_delay = 1 / fps
@@ -27,7 +27,7 @@ class Vision:
         self.start = None
         self.angle = None
         self.crop_corners = None
-        self.pixel_to_cm_scale = 1 
+        self.pixel_to_mm_scale = 1 
 
         # Load a default image if provided
         if default_image_path:
@@ -76,13 +76,14 @@ class Vision:
         if len(results) < 4:
             print(f"VISION: warning: Only {len(results)} tags detected. Cannot crop the image.")
             self.croped_image = self.image
-            return None
+            return True
         print(f"VISION: detected {len(results)} tags.")
 
         # Map tags to corners (top-left, top-right, bottom-left, bottom-right)
         tag_positions = self._parse_tag_positions(results)
         if len(tag_positions) < 4:
-            raise Exception("VISION: Error: Failed to identify all four corner tags.")
+            print("VISION: Error: Failed to identify all four corner tags.")
+            return True
 
         # Define the corners of the rectangle in the source image
         corners = np.array([
@@ -111,6 +112,8 @@ class Vision:
         cropped_image = cv2.warpPerspective(self.image, transform_matrix, (output_width, output_height))
 
         self.croped_image = cropped_image
+
+        return False
 
     def _parse_tag_positions(self, results):
         """
@@ -165,7 +168,7 @@ class Vision:
         avg_dist = (dist_top + dist_right + dist_bottom + dist_left) / 4
 
         # Compute the scale (pixels per centimeter)
-        self.pixel_to_cm_scale = avg_dist / self.tag_size_cm
+        self.pixel_to_mm_scale = avg_dist / self.tag_size_mm
 
 
     def _resize_image(self, frame):
@@ -190,8 +193,8 @@ class Vision:
             self.start = (int(self.start[0] * scale_x), int(self.start[1] * scale_y))
 
         # Adjust the pixel-to-cm scale if it exists
-        if self.pixel_to_cm_scale:
-            self.pixel_to_cm_scale *= scale_x  # Assuming uniform scaling
+        if self.pixel_to_mm_scale:
+            self.pixel_to_mm_scale *= scale_x  # Assuming uniform scaling
             return resized_frame
         
 
@@ -281,7 +284,7 @@ class Vision:
         # Average the distances to get a more robust measurement
         apparent_size_pixels = (dist_top + dist_right + dist_bottom + dist_left) / 4
 
-        self.pixel_to_cm_scale = apparent_size_pixels / self.tag_size_cm
+        self.pixel_to_mm_scale = apparent_size_pixels / self.tag_size_mm
         #print(f"Scale calculated: {self.pixel_to_cm_scale:.2f} pixels/cm")
 
 
@@ -342,16 +345,25 @@ class Vision:
             if live:
                 self.set_image(frame)
 
-            self.detect_and_crop()
+            obstruction = self.detect_and_crop()
 
-            self.find_goal()
+            if obstruction:
+                
+                self.start = None
 
-            self.find_start()
+                self.angle = None
 
-            self.croped_image = self._resize_image(self.croped_image)
+            else:
+
+                self.find_goal()
+
+                self.find_start()
+
+                self.croped_image = self._resize_image(self.croped_image)
+
+                self.matrix = self._generate_matrix(self.croped_image)
 
 
-            self.matrix = self._generate_matrix(self.croped_image)
             time.sleep(max(0, self.frame_delay - (time.time() - start_time)))
 
         else:
@@ -367,7 +379,7 @@ class Vision:
         return self.angle
     
     def getScale(self):
-        return self.pixel_to_cm_scale
+        return self.pixel_to_mm_scale
     
     def getMatrix(self):
         return self.matrix
@@ -398,8 +410,8 @@ class Vision:
             print(f"VISION: goal: {self.goal}")
         else:
             print("VISION: goal not detected.")
-        if self.pixel_to_cm_scale is not None:
-            print(f"VISION: pixel-to-cm scale: {self.pixel_to_cm_scale:.2f} cells/cm")
+        if self.pixel_to_mm_scale is not None:
+            print(f"VISION: pixel-to-cm scale: {self.pixel_to_mm_scale:.2f} cells/cm")
 
 
     def release(self):
