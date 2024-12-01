@@ -335,7 +335,7 @@ class Vision:
         Update the image displayed in the window.
         """
         if self.image is not None:
-            start_time = time.time()
+            # start_time = time.time()
 
             ret, frame = self.camera.read()
             if not ret:
@@ -364,7 +364,7 @@ class Vision:
                 self.matrix = self._generate_matrix(self.croped_image)
 
 
-            time.sleep(max(0, self.frame_delay - (time.time() - start_time)))
+            # time.sleep(max(0, self.frame_delay - (time.time() - start_time)))
 
         else:
             raise Exception("No image to update. Call set_image() first.")

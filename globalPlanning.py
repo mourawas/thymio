@@ -18,7 +18,8 @@ class GlobalPlanning:
         
     #here is the function for the dijkstra algortihm
     def dijkstra(self, matrix, start, goal):
-        
+        self.path = []
+
         # Initialize variables
         self.map = matrix
         self.start = start

@@ -40,7 +40,7 @@ class Kalman:
         # Arbitrary values
         q1 = 1 
         q2 = 1
-        q3 = np.pi/180 # 1 rad THIS MAYBE SHOULD BE 1
+        q3 = np.pi / 180 # 1 rad
         self.Q = np.matrix([[q1,0,0],[0,q2,0],[0,0,q3]],dtype= 'float')
 
         # Motor speeds
@@ -56,7 +56,7 @@ class Kalman:
         self.d = 93.5
 
         # Delta time 
-        self.lastKalman = time.time_ns()
+        self.lastKalman = time.time_ns()/1e9
 
         # Speed from pwm to mm/s
         # Depends on which thymio
@@ -76,7 +76,7 @@ class Kalman:
         return float(self.E[0, 0]), float(self.E[1, 0]), float(self.E[2, 0])
 
     def set_lastKalman_time(self):
-        self.lastKalman = time.time_ns()
+        self.lastKalman = time.time_ns()/1e9
 
 
     def kalman_prediction(self, L_speed, R_speed, dt):
@@ -89,8 +89,8 @@ class Kalman:
         # variances of the system.
         
         # Time between the last update/prediction and this time
-        deltaT = time.time_ns() - self.lastKalman
-        deltaT = deltaT/1e9 # Convert to seconds
+        #deltaT = time.time_ns()/1e9 - self.lastKalman + 0.2
+        #deltaT = deltaT/1e9 # Convert to seconds
 
         # Update speeds of the robot
         self.U = np.matrix([[L_speed],[R_speed]],dtype= 'float')
@@ -114,7 +114,7 @@ class Kalman:
         self.P = self.A @ self.P @ self.A.T + R
         
         # Update the time of the last kalman done to find deltaT
-        self.lastKalman = time.time_ns()
+        self.lastKalman = time.time_ns()/1e9
 
     def kalman_update(self, measurement):
 
@@ -147,4 +147,4 @@ class Kalman:
         self.P = np.dot((I-np.dot(K,self.H)),self.P)
         
         # Update the time of the last kalman done to find deltaT
-        self.lastKalman = time.time_ns()
+        self.lastKalman = time.time_ns()/1e9

@@ -23,8 +23,8 @@ class ThymioControl:
         self.__step = 1
 
         # threshold for the kidnapping detection
-        self.__kidnappingThresholdPosition = 20 # mm
-        self.__kidnappingThresholdAngle = 30 # degrees
+        self.__kidnappingThresholdPosition = 150 # mm
+        self.__kidnappingThresholdAngle = 45 # degrees
 
         # threshold for the robot to consider that it has reached a waypoint
         self.__reachedThreshold = 50 # mm
@@ -205,7 +205,7 @@ class ThymioControl:
         print("THYMIO CONTROL: pos: ", self.__pos)
         print("THYMIO CONTROL: distance: ", distance)
 
-        if distance < self.__reachedThreshold:
+        while distance < self.__reachedThreshold:
             if self.__step == len(self.__path) - 1:
                 print("THYMIO CONTROL: Destination reached")
                 return 0, 0, 0, 0, True
@@ -239,7 +239,10 @@ class ThymioControl:
         else:
             # if the angle is the desired one, move straight
             w = 0
-            v = self.__linearSpeed
+            if self.__timeStep != 0:
+                v = self.__linearSpeed
+            else:
+                v = 0
         
         print("THYMIO CONTROL: v: ", v)
         print("THYMIO CONTROL: w: ", w)
