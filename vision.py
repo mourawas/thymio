@@ -444,7 +444,7 @@ if __name__ == "__main__":
     try:
         image_path1 = "images/IMG_7018.jpeg"
         image_path = "images/original_image.jpeg"
-        vision = Vision(fps=3, threshold=100,target_height=80, default_image_path=image_path)
+        vision = Vision(fps=3, threshold=100,target_height=800, default_image_path=image_path)
 
         while True:
 
