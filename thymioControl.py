@@ -198,9 +198,9 @@ class ThymioControl:
         objective = self.__path[self.__step]
 
         # calculate the distance between the robot and the objective
-        x_diff = objective[0] - self.__pos[0]
-        y_diff = objective[1] - self.__pos[1]
-        distance = math.sqrt(x_diff**2 + y_diff**2)
+        row_diff = objective[0] - self.__pos[0]
+        col_diff = objective[1] - self.__pos[1]
+        distance = math.sqrt(row_diff**2 + col_diff**2)
         print("THYMIO CONTROL: objective: ", objective)
         print("THYMIO CONTROL: pos: ", self.__pos)
         print("THYMIO CONTROL: distance: ", distance)
@@ -215,17 +215,17 @@ class ThymioControl:
             objective = self.__path[self.__step]
 
             # calculate the new distance between the robot and the objective
-            x_diff = objective[0] - self.__pos[0]
-            y_diff = objective[1] - self.__pos[1]
-            distance = math.sqrt(x_diff**2 + y_diff**2)
+            row_diff = objective[0] - self.__pos[0]
+            col_diff = objective[1] - self.__pos[1]
+            distance = math.sqrt(row_diff**2 + col_diff**2)
             print("THYMIO CONTROL: new objective: ", objective)
             print("THYMIO CONTROL: pos: ", self.__pos)
             print("THYMIO CONTROL: new distance: ", distance)
 
         # calculate the angle between the robot and the objective
         # normalize the angle between -pi and pi
-        angleDistance = (math.atan2(y_diff, x_diff) - self.__angle + math.pi) % (2 * math.pi) - math.pi
-        print("THYMIO CONTROL: waypoint angle: ", math.atan2(y_diff, x_diff))
+        angleDistance = (math.atan2(row_diff, col_diff) - self.__angle + math.pi) % (2 * math.pi) - math.pi
+        print("THYMIO CONTROL: waypoint angle: ", math.atan2(row_diff, col_diff))
         print("THYMIO CONTROL: angle: ", self.__angle)
         print("THYMIO CONTROL: angleDistance: ", angleDistance)
 
