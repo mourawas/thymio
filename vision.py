@@ -399,8 +399,8 @@ class Vision:
 
     def display_all(self):
         self.display_image()
-        self.display_matrix()
-        print(f"VISION: matrix shape: {self.matrix.shape}")
+        #self.display_matrix()
+        #print(f"VISION: matrix shape: {self.matrix.shape}")
         if self.start is not None and self.angle is not None:
             print(f"VISION: start: {self.start}, angle: {self.angle:.2f} rad")
         else:
@@ -422,39 +422,39 @@ class Vision:
         cv2.destroyAllWindows()
 
 
-if __name__ == "__main__":
-    try:
-        image_path1 = "images/IMG_7018.jpeg"
-        image_path2 = "images/IMG_7020.jpeg"
-        image_path = "images/original_image.jpeg"
-        vision = Vision(fps=3, threshold=100, target_height=80, default_image_path=image_path)
-
-        vision.update_image(live=False)
-    
-        vision.display_all()
-
-        if cv2.waitKey(0) & 0xFF == ord('q'):  # Close the window when 'q' is pressed
-            pass
-    finally:
-        vision.release()
-
-
-
 # if __name__ == "__main__":
 #     try:
 #         image_path1 = "images/IMG_7018.jpeg"
 #         image_path2 = "images/IMG_7020.jpeg"
-#         vision = Vision(fps=3,target_height=200, default_image_path=image_path2)
+#         image_path = "images/original_image.jpeg"
+#         vision = Vision(fps=3, threshold=100, target_height=80, default_image_path=image_path)
 
-#         while True:
+#         vision.update_image(live=False)
+    
+#         vision.display_all()
 
-#             vision.update_image()
-
-            
-#             vision.display_all()
-
-
-#             if cv2.waitKey(1) & 0xFF == ord('q'):  # Close the window when 'q' is pressed
-#                 pass
+#         if cv2.waitKey(0) & 0xFF == ord('q'):  # Close the window when 'q' is pressed
+#             pass
 #     finally:
 #         vision.release()
+
+
+
+if __name__ == "__main__":
+    try:
+        image_path1 = "images/IMG_7018.jpeg"
+        image_path = "images/original_image.jpeg"
+        vision = Vision(fps=3, threshold=100,target_height=80, default_image_path=image_path)
+
+        while True:
+
+            vision.update_image()
+
+            
+            vision.display_all()
+
+
+            if cv2.waitKey(1) & 0xFF == ord('q'):  # Close the window when 'q' is pressed
+                pass
+    finally:
+        vision.release()

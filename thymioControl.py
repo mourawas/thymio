@@ -133,7 +133,7 @@ class ThymioControl:
     def amIKidnapped(self, position, angle):
         print("THYMIO CONTROL: kidnapping predicted pos: ", self.__pos_est)
         print("THYMIO CONTROL: kidnapping predicted angle: ", self.__angle_est)
-        print("THYMIO CONTROL: kidnapping pos: ", position)
+        print("THYMIO CONTROL: kidnapping pos: ", position[0] * self.__cellToMm, position[1] * self.__cellToMm)
         print("THYMIO CONTROL: kidnapping angle: ", angle)
         pos = [float(position[0] * self.__cellToMm), float(position[1] * self.__cellToMm)]
         return self.__pos_est != [] and self.__angle_est != None and (math.sqrt((self.__pos_est[0] - pos[0])**2 + (self.__pos_est[1] - pos[1])**2) > self.__kidnappingThresholdPosition or abs(self.__angle_est - angle) > self.__kidnappingThresholdAngle)
