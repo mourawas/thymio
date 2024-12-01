@@ -100,8 +100,8 @@ class Kalman:
         # which gives
         # Δx = (c/2)⋅(Rspeed+Lspeed)⋅cos(θ)⋅Δt
         # Δθ = ((c⋅Rspeed​−c⋅Lspeed​​)/b)⋅Δt
-        self.G = np.matrix([[math.cos(self.E[2])*self.c/self.adj/2, math.cos(self.E[2])*self.c/2],
-                            [math.sin(self.E[2])*self.c/self.adj/2, math.sin(self.E[2])*self.c/2],
+        self.G = np.matrix([[math.sin(self.E[2])*self.c/self.adj/2, math.sin(self.E[2])*self.c/2],
+                            [math.cos(self.E[2])*self.c/self.adj/2, math.cos(self.E[2])*self.c/2],
                             [self.c/self.adj/self.d, -1*self.c/self.d]],dtype= 'float')
 
         # Predicted state of the robot AE+GU⋅Δt (slide 41)

@@ -224,8 +224,8 @@ class ThymioControl:
 
         # calculate the angle between the robot and the objective
         # normalize the angle between -pi and pi
-        angleDistance = (math.atan2(col_diff, row_diff) - self.__angle + math.pi) % (2 * math.pi) - math.pi
-        print("THYMIO CONTROL: waypoint angle: ", math.atan2(col_diff, row_diff))
+        angleDistance = (math.atan2(row_diff, col_diff) - self.__angle + math.pi) % (2 * math.pi) - math.pi
+        print("THYMIO CONTROL: waypoint angle: ", math.atan2(row_diff, col_diff))
         print("THYMIO CONTROL: angle: ", self.__angle)
         print("THYMIO CONTROL: angleDistance: ", angleDistance)
 
