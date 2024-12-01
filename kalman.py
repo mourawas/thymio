@@ -40,7 +40,7 @@ class Kalman:
         # Arbitrary values
         q1 = 1 
         q2 = 1
-        q3 = np.pi/180 # 1 rad
+        q3 = np.pi/180 # 1 rad THIS MAYBE SHOULD BE 1
         self.Q = np.matrix([[q1,0,0],[0,q2,0],[0,0,q3]],dtype= 'float')
 
         # Motor speeds
@@ -48,8 +48,8 @@ class Kalman:
 
         # Variances of motors (Needed to compute Q)
         # Depends on which thymio
-        u1 = 13
-        u2 = 13
+        u1 = 22
+        u2 = 22
         self.U_var = np.diag([u1,u2])
 
         # Distance between the two wheels
@@ -61,6 +61,7 @@ class Kalman:
         # Speed from pwm to mm/s
         # Depends on which thymio
         self.c = 0.3726
+
         # Adjustment for the thymio's wheels differences
         # Depends on which thymio
         self.adj = 1.07
