@@ -205,6 +205,19 @@ class ThymioControl:
         print("THYMIO CONTROL: pos: ", self.__pos)
         print("THYMIO CONTROL: distance: ", distance)
 
+        # check if robot has overshot the waypoint
+        if self.__path[self.__step] != self.__path[-1]:
+            dist_next = math.sqrt((self.__path[self.__step + 1][0] - self.__pos[0])**2 + (self.__path[self.__step + 1][1]- self.__pos[1])**2)
+            dist_obj = math.sqrt((self.__path[self.__step + 1][0] - self.__path[self.__step][0])**2 + (self.__path[self.__step + 1][1] - self.__path[self.__step][1])**2)
+            if dist_next < dist_obj:
+                self.__step += 1
+                print("THYMIO CONTROL: overshot objective, going to next: ", self.__step)
+                objective = self.__path[self.__step]
+                row_diff = objective[0] - self.__pos[0]
+                col_diff = objective[1] - self.__pos[1]
+                distance = math.sqrt(row_diff*2 + col_diff*2)
+
+        # check if the robot has reached the waypoint
         while distance < self.__reachedThreshold:
             if self.__step == len(self.__path) - 1:
                 print("THYMIO CONTROL: Destination reached")
