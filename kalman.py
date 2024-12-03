@@ -108,7 +108,7 @@ class Kalman:
         self.E = self.A @ self.E + self.G @ self.U*dt
 
         # Uncertainty due to the motors G⋅Uvar⋅G'+I
-        R = self.G @ self.U_var @ self.G.T + np.eye(3)
+        R = self.G @ self.U_var @ self.G.T #+ np.eye(3)
         
         # Update the variance of the system APA'+R (slide 44)
         self.P = self.A @ self.P @ self.A.T + R

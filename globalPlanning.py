@@ -12,7 +12,6 @@ class GlobalPlanning:
     def set_magnification(self, scale, thymio_size):
         # scale is cells/mm
         # I want the magnification in cells
-        thymio_size = (thymio_size * 1.5) / 2 # 5% bigger than the real size, / 2 to consider only half the robot
         self.magnification = math.ceil(thymio_size * scale)
         print("GLOBAL PLANNING: magnification: ", self.magnification)
         
