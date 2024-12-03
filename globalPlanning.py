@@ -27,6 +27,16 @@ class GlobalPlanning:
         grid = np.full_like(self.map, -4)  # Initialize grid with -4 (unmarked)
         current = None  # Current cell in path
 
+        shadow_area = []
+        for drow in range(-self.magnification, self.magnification + 1):
+            for dcol in range(-self.magnification, self.magnification + 1):
+                shadow_cell = (start[0] + drow, start[1] + dcol)
+                if (0 <= shadow_cell[0] < matrix.shape[0]) and (0 <= shadow_cell[1] < matrix.shape[1]):
+                    shadow_area.append(shadow_cell)
+        
+        for cell in shadow_area:
+            matrix[cell] = 0
+
         # Make obstacles bigger
         obstacles = []
         for row in range(grid.shape[0]):
