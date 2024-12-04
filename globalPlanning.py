@@ -13,7 +13,6 @@ class GlobalPlanning:
         # scale is cells/mm
         # I want the magnification in cells
         self.magnification = math.ceil(thymio_size * scale)
-        print("GLOBAL PLANNING: magnification: ", self.magnification)
         
     #here is the function for the dijkstra algortihm
     def dijkstra(self, matrix, start, goal):

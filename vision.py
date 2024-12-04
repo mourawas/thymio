@@ -393,7 +393,6 @@ class Vision:
                 f"{Fore.WHITE}{x:3} "
                 for x in row
             ) + "\n"
-        print("VISION: ", result + Style.RESET_ALL)
         # Convert the binary matrix to an image
         binary_map = np.where(self.matrix == -1, 0, 255).astype(np.uint8)
         cv2.imshow("Binary Matrix", binary_map)
@@ -401,7 +400,6 @@ class Vision:
     def display_all(self):
         self.display_image()
         #self.display_matrix()
-        #print(f"VISION: matrix shape: {self.matrix.shape}")
         if self.start is not None and self.angle is not None:
             print(f"VISION: start: {self.start}, angle: {self.angle:.2f} rad")
         else:

@@ -128,15 +128,11 @@ class Kalman:
         
         # Measured state matrix
         Z = np.matrix([[measurement[0]],[measurement[1]],[measurement[2]]],dtype= 'float')
-
-        # print(Z, "Z")
         
         # Kalman gain (slide 48)
         K1 = np.linalg.inv(np.dot(self.H,np.dot(self.P,np.transpose(self.H))) + self.Q)
         K2 = np.dot(self.P,np.transpose(self.H))
         K = np.dot(K2,K1)        
-
-        # print(K, "K")
         
         # Correction of the state with the Kalman gain and the measurements 
         # E=E+K⋅(Z−H⋅E)
