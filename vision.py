@@ -26,7 +26,6 @@ class Vision:
         self.goal = None
         self.start = None
         self.angle = None
-        self.crop_corners = None
         self.pixel_to_mm_scale = 1 
 
         # Load a default image if provided
