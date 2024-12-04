@@ -22,7 +22,7 @@ class Plotter:
         plt.xticks(range(0, cols, 5))
         plt.yticks(range(0, rows, 5))
         plt.grid(color='gray', linestyle='--', linewidth=0.5)
-        plt.gca().invert_yaxis()  # Match grid orientation to the array
+        plt.gca().invert_yaxis()  # match grid orientation to the array
         plt.title("Grid Map with Start and Goal")
         plt.legend()
         plt.show()
