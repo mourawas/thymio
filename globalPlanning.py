@@ -13,7 +13,7 @@ class GlobalPlanning:
         # scale is cells/mm
         # I want the magnification in cells
         self.magnification = math.ceil(thymio_size * scale)
-        print("GLOBAL PLANNING: magnification: ", self.magnification)
+        # print("GLOBAL PLANNING: magnification: ", self.magnification)
         
     #here is the function for the dijkstra algortihm
     def dijkstra(self, matrix, start, goal):
@@ -27,9 +27,10 @@ class GlobalPlanning:
         grid = np.full_like(self.map, -4)  # Initialize grid with -4 (unmarked)
         current = None  # Current cell in path
 
+        area = math.ceil(self.magnification * 1.5)
         shadow_area = []
-        for drow in range(-self.magnification, self.magnification + 1):
-            for dcol in range(-self.magnification, self.magnification + 1):
+        for drow in range(-area, area + 1):
+            for dcol in range(-area, area + 1):
                 shadow_cell = (start[0] + drow, start[1] + dcol)
                 if (0 <= shadow_cell[0] < matrix.shape[0]) and (0 <= shadow_cell[1] < matrix.shape[1]):
                     shadow_area.append(shadow_cell)
