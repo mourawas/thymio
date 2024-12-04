@@ -3,8 +3,8 @@ Project for the Mobile Robotic course, fall semester 2024
 
 ## Group Members
 **Rocca Federico** (390233) - First year MSc in Robotics at EPFL, previous degree BSc in Computer Engineering at Politecnico di Milano  
-**Rashidi Mohammad Massi** () -  
-**Rawas Mouhamad Bilal** () -  
+**Rashidi Mohammad Massi** (394309) - First year MSc in CyberSecurity at EPFL previous degree BSc in Computer Science at University of Geneva       
+**Rawas Mouhamad Bilal** (345489) - First year MSc in Robotics at EPFL, previous degree BSc in Microengineering at EPFL    
 **Schär Mikaël Joël Michel** (325388) - First year MSc in Robotics at EPFL, previous degree BSc in Microengineering at EPFL
 
 ## Introduction
