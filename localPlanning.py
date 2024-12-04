@@ -1,13 +1,13 @@
 class LocalPlanning:
     def __init__(self):
-        self.__thresholds = [2000, 1900, 1900, 1900, 2000]
+        self.__thresholds = [2500, 2400, 2300, 2400, 2500]
 
         # tunable parameters
-        self.__speedDuringAvoidance = 50
+        self.__speedDuringAvoidance = 70
 
         # ann values
-        self.__wl = [4, 7, -1, -7, -4]
-        self.__wr = [-4, -7, -1, 7, 4]
+        self.__wl = [4, 7, -2, -7, -4]
+        self.__wr = [-4, -7, -2, 7, 4]
         self.__sensorScale = 200
 
     # the robot gathers the proximity sensor readings and has to determine if it has to use local planning
