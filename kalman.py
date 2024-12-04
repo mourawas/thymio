@@ -64,7 +64,7 @@ class Kalman:
 
         # Adjustment for the thymio's wheels differences
         # Depends on which thymio
-        self.adj = 1.07
+        self.adj = 1.1
 
     def initialize_position(self, x, y, theta):
         self.E[0, 0] = x
@@ -106,9 +106,10 @@ class Kalman:
 
         # Predicted state of the robot AE+GU⋅Δt (slide 41)
         self.E = self.A @ self.E + self.G @ self.U*dt
+        self.E[2] = self.E[2] % (2*np.pi)
 
         # Uncertainty due to the motors G⋅Uvar⋅G'+I
-        R = self.G @ self.U_var @ self.G.T #+ np.eye(3)
+        R = self.G @ self.U_var @ self.G.T + 0.1 * np.eye(3)
         
         # Update the variance of the system APA'+R (slide 44)
         self.P = self.A @ self.P @ self.A.T + R
@@ -128,19 +129,20 @@ class Kalman:
         # Measured state matrix
         Z = np.matrix([[measurement[0]],[measurement[1]],[measurement[2]]],dtype= 'float')
 
-        print(Z, "Z")
+        # print(Z, "Z")
         
         # Kalman gain (slide 48)
         K1 = np.linalg.inv(np.dot(self.H,np.dot(self.P,np.transpose(self.H))) + self.Q)
         K2 = np.dot(self.P,np.transpose(self.H))
         K = np.dot(K2,K1)        
 
-        print(K, "K")
+        # print(K, "K")
         
         # Correction of the state with the Kalman gain and the measurements 
         # E=E+K⋅(Z−H⋅E)
         # Z - HE is the difference between the measured and the predicted state
         self.E = self.E + np.dot(K,(Z-np.dot(self.H,self.E)))
+        self.E[2] = self.E[2] % (2*np.pi)
         
         # Update of the variance of the system (slide 48)
         I = np.eye(3)

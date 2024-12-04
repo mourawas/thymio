@@ -14,7 +14,7 @@ class Vision:
         - fps: Frames per second for controlling capture speed.
         - default_image_path: Path to an image file to use as default if the camera is not accessible.
         """
-        self.camera = cv2.VideoCapture(0)
+        self.camera = cv2.VideoCapture(1)
 
         self.target_height = target_height
         self.tag_size_mm = tag_size_mm  # Size of one side of the tag in centimeters
@@ -69,14 +69,14 @@ class Vision:
         results = detector.detect(gray)
 
         # Debug: Affichez tous les IDs détectés
-        print(f"VISION: tag IDs: {[result.tag_id for result in results]}")
+        # print(f"VISION: tag IDs: {[result.tag_id for result in results]}")
 
         # Check if at least 4 tags are detected
         if len(results) < 4:
             print(f"VISION: warning: Only {len(results)} tags detected. Cannot crop the image.")
             self.croped_image = self.image
             return True
-        print(f"VISION: detected {len(results)} tags.")
+        # print(f"VISION: detected {len(results)} tags.")
 
         # Map tags to corners (top-left, top-right, bottom-left, bottom-right)
         tag_positions = self._parse_tag_positions(results)
@@ -239,7 +239,7 @@ class Vision:
             cx = int(moments["m10"] / moments["m00"])  # x-coordinate (horizontal position)
             cy = int(moments["m01"] / moments["m00"])  # y-coordinate (vertical position)
             self.goal = (cy, cx)  # Store as (row, column) for consistency
-            print("VISION: goal detected")
+            # print("VISION: goal detected")
         else:
             self.goal = None
             print("VISION: red region detected, but could not calculate center.")
@@ -300,7 +300,7 @@ class Vision:
         dx, dy = ptB[0] - ptA[0], ptB[1] - ptA[1]
         self.angle = (np.arctan2(dy, dx) - np.pi/2 ) % (2 * np.pi)  # Angle in radians (0 to 2*pi)
 
-        print(f"VISION: start detected")
+        # print(f"VISION: start detected")
 
         # Replace the pixels corresponding to the tag with white in the cropped image
         white_color = (255, 255, 255)
@@ -327,6 +327,8 @@ class Vision:
             cv2.imshow("Original (without croped) Image", self.image)
         else:
             raise Exception("No image to display. Call set_image() first.")
+        
+        cv2.waitKey(1)
 
 
     def update_image(self, live=True):

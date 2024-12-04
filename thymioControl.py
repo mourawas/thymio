@@ -17,14 +17,14 @@ class ThymioControl:
         self.__timeStep = 0
 
         # previous error for the derivative part of the controller
-        self.__prevAngleError = 0
+        self.__prevAngleError = 0.2
 
         # index of the current waypoint in the path that is being followed
         self.__step = 1
 
         # threshold for the kidnapping detection
         self.__kidnappingThresholdPosition = 150 # mm
-        self.__kidnappingThresholdAngle = 45 # degrees
+        self.__kidnappingThresholdAngle = 150*np.pi/180 # degrees
 
         # threshold for the robot to consider that it has reached a waypoint
         self.__reachedThreshold = 50 # mm
@@ -39,13 +39,13 @@ class ThymioControl:
         self.__thymioWheelSpeedConversion = 0.3726 # (mm/s)/pwm
 
         # constant proportional parameter for transforming angle into rotational speed
-        self.__proportionalGain = 0.3
+        self.__proportionalGain = 0.5
 
         # constant derivative parameter for transforming angle into rotational speed
         self.__derivativeGain = 0.3
 
         # adjustment for the thymio's wheels differences
-        self.__wheelsAdjustment = 1.07
+        self.__wheelsAdjustment = 1.1
 
         # cell to mm conversion
         self.__cellToMm = 0 # 1 cell = self.__cellToMm mm
@@ -66,8 +66,8 @@ class ThymioControl:
             self.__pos = [float(position[0] * self.__cellToMm), float(position[1] * self.__cellToMm)]
             self.__angle = angle
 
-        print("THYMIO: pos: ", self.__pos)
-        print("THYMIO: angle: ", self.__angle)
+        # print("THYMIO: pos: ", self.__pos)
+        # print("THYMIO: angle: ", self.__angle)
 
     # pose getter
     def get_position(self):
@@ -124,19 +124,20 @@ class ThymioControl:
         self.__oldAngle = self.__angle
         self.__pos = [position[0], position[1]]
         self.__angle = angle
-        print("THYMIO CONTROL: old pos: ", self.__oldPos)
-        print("THYMIO CONTROL: old angle: ", self.__oldAngle)
-        print("THYMIO CONTROL: pos: ", self.__pos)
-        print("THYMIO CONTROL: angle: ", self.__angle)
+        # print("THYMIO CONTROL: old pos: ", self.__oldPos)
+        # print("THYMIO CONTROL: old angle: ", self.__oldAngle)
+        # print("THYMIO CONTROL: pos: ", self.__pos)
+        # print("THYMIO CONTROL: angle: ", self.__angle)
     
     # check if the robot is kidnapped
     def amIKidnapped(self, position, angle):
-        print("THYMIO CONTROL: kidnapping predicted pos: ", self.__pos_est)
-        print("THYMIO CONTROL: kidnapping predicted angle: ", self.__angle_est)
-        print("THYMIO CONTROL: kidnapping pos: ", position[0] * self.__cellToMm, position[1] * self.__cellToMm)
-        print("THYMIO CONTROL: kidnapping angle: ", angle)
+        # print("THYMIO CONTROL: kidnapping predicted pos: ", self.__pos_est)
+        # print("THYMIO CONTROL: kidnapping predicted angle: ", self.__angle_est)
+        # print("THYMIO CONTROL: kidnapping pos: ", position[0] * self.__cellToMm, position[1] * self.__cellToMm)
+        # print("THYMIO CONTROL: kidnapping angle: ", angle)
         pos = [float(position[0] * self.__cellToMm), float(position[1] * self.__cellToMm)]
-        return self.__pos_est != [] and self.__angle_est != None and (math.sqrt((self.__pos_est[0] - pos[0])**2 + (self.__pos_est[1] - pos[1])**2) > self.__kidnappingThresholdPosition or abs(self.__angle_est - angle) > self.__kidnappingThresholdAngle)
+        return self.__pos_est != [] and self.__angle_est != None and (math.sqrt((self.__pos_est[0] - pos[0])**2 + (self.__pos_est[1] - pos[1])**2) > self.__kidnappingThresholdPosition or abs((angle - self.__angle_est + math.pi) % (2 * math.pi) - math.pi) > self.__kidnappingThresholdAngle)
+
     
     def set_pred(self, row, col, angle):
         self.__pos_est = [row, col]
@@ -145,8 +146,6 @@ class ThymioControl:
     # move the robot along the path, using PD controller and costant linear speed
     def move_pd(self, position, angle, dt):
         goal = False
-
-        self.__timeStep = dt
 
         #position and angle of the Thymio
         self.__angle = angle
@@ -158,9 +157,21 @@ class ThymioControl:
         x_diff = objective[0] - self.__pos[0]
         y_diff = objective[1] - self.__pos[1]
         distance = math.sqrt(x_diff**2 + y_diff**2)
-        print("THYMIO CONTROL: objective: ", objective)
-        print("THYMIO CONTROL: pos: ", self.__pos)
-        print("THYMIO CONTROL: distance: ", distance)
+        # print("THYMIO CONTROL: objective: ", objective)
+        # print("THYMIO CONTROL: pos: ", self.__pos)
+        # print("THYMIO CONTROL: distance: ", distance)
+
+        # check if robot has overshot the waypoint
+        if self.__path[self.__step] != self.__path[-1]:
+            dist_next = math.sqrt((self.__path[self.__step + 1][0] - self.__pos[0])**2 + (self.__path[self.__step + 1][1]- self.__pos[1])**2)
+            dist_obj = math.sqrt((self.__path[self.__step + 1][0] - self.__path[self.__step][0])**2 + (self.__path[self.__step + 1][1] - self.__path[self.__step][1])**2)
+            if dist_next < dist_obj:
+                self.__step += 1
+                # print("THYMIO CONTROL: overshot objective, going to next: ", self.__step)
+                objective = self.__path[self.__step]
+                row_diff = objective[0] - self.__pos[0]
+                col_diff = objective[1] - self.__pos[1]
+                distance = math.sqrt(row_diff*2 + col_diff*2)
 
         # calculate the angle between the robot and the objective
         # normalize the angle between -pi and pi
@@ -169,18 +180,15 @@ class ThymioControl:
         # move the robot and if the cell is reached, delete it and restart with the following
         if distance < self.__reachedThreshold:
             if self.__step == len(self.__path) - 1:
-                print("THYMIO CONTROL: Destination reached")
+                # print("THYMIO CONTROL: Destination reached")
                 return 0, 0, 0, 0, True
             self.__step += 1
-            print("THYMIO CONTROL: Next objective: ", self.__step)
+            # print("THYMIO CONTROL: Next objective: ", self.__step)
             v, w, wl, wr, goal = self.move_pd(position, angle, dt)
         else:
             # move throwards the next cell in the path
             # constant linear speed, PD controller for the angular speed
-            if self.__timeStep != 0:
-                v, w = self.__linearSpeed, angleDistance * self.__proportionalGain + self.__derivativeGain * (angleDistance - self.__prevAngleError) / self.__timeStep
-            else:
-                v, w = 0, 0
+            v, w = self.__linearSpeed, angleDistance * self.__proportionalGain + 0 * self.__derivativeGain * (angleDistance - self.__prevAngleError) / dt
             self.__prevAngleError = angleDistance
             w = max(min(w, self.__maxAngularSpeed), -self.__maxAngularSpeed)
             wl, wr = self.differentialDrive(v, w)
@@ -188,8 +196,6 @@ class ThymioControl:
     
     # move the robot along the path, stopping and turning with PD controller before going straight to the waypoints
     def move(self, position, angle, dt):
-
-        self.__timeStep = dt
 
         #position and angle of the thymio
         self.__angle = angle
@@ -201,9 +207,9 @@ class ThymioControl:
         row_diff = objective[0] - self.__pos[0]
         col_diff = objective[1] - self.__pos[1]
         distance = math.sqrt(row_diff**2 + col_diff**2)
-        print("THYMIO CONTROL: objective: ", objective)
-        print("THYMIO CONTROL: pos: ", self.__pos)
-        print("THYMIO CONTROL: distance: ", distance)
+        # print("THYMIO CONTROL: objective: ", objective)
+        # print("THYMIO CONTROL: pos: ", self.__pos)
+        # print("THYMIO CONTROL: distance: ", distance)
 
         # check if robot has overshot the waypoint
         if self.__path[self.__step] != self.__path[-1]:
@@ -211,19 +217,19 @@ class ThymioControl:
             dist_obj = math.sqrt((self.__path[self.__step + 1][0] - self.__path[self.__step][0])**2 + (self.__path[self.__step + 1][1] - self.__path[self.__step][1])**2)
             if dist_next < dist_obj:
                 self.__step += 1
-                print("THYMIO CONTROL: overshot objective, going to next: ", self.__step)
+                # print("THYMIO CONTROL: overshot objective, going to next: ", self.__step)
                 objective = self.__path[self.__step]
                 row_diff = objective[0] - self.__pos[0]
                 col_diff = objective[1] - self.__pos[1]
-                distance = math.sqrt(row_diff*2 + col_diff*2)
+                distance = math.sqrt(row_diff**2 + col_diff**2)
 
         # check if the robot has reached the waypoint
         while distance < self.__reachedThreshold:
             if self.__step == len(self.__path) - 1:
-                print("THYMIO CONTROL: Destination reached")
+                # print("THYMIO CONTROL: Destination reached")
                 return 0, 0, 0, 0, True
             self.__step += 1
-            print("THYMIO CONTROL: next objective: ", self.__step)
+            # print("THYMIO CONTROL: next objective: ", self.__step)
             
             objective = self.__path[self.__step]
 
@@ -231,34 +237,36 @@ class ThymioControl:
             row_diff = objective[0] - self.__pos[0]
             col_diff = objective[1] - self.__pos[1]
             distance = math.sqrt(row_diff**2 + col_diff**2)
-            print("THYMIO CONTROL: new objective: ", objective)
-            print("THYMIO CONTROL: pos: ", self.__pos)
-            print("THYMIO CONTROL: new distance: ", distance)
+            # print("THYMIO CONTROL: new objective: ", objective)
+            # print("THYMIO CONTROL: pos: ", self.__pos)
+            # print("THYMIO CONTROL: new distance: ", distance)
 
         # calculate the angle between the robot and the objective
         # normalize the angle between -pi and pi
         angleDistance = (math.atan2(row_diff, col_diff) - self.__angle + math.pi) % (2 * math.pi) - math.pi
-        print("THYMIO CONTROL: waypoint angle: ", math.atan2(row_diff, col_diff))
-        print("THYMIO CONTROL: angle: ", self.__angle)
-        print("THYMIO CONTROL: angleDistance: ", angleDistance)
+        # print("THYMIO CONTROL: waypoint angle: ", math.atan2(row_diff, col_diff))
+        # print("THYMIO CONTROL: angle: ", self.__angle)
+        # print("THYMIO CONTROL: angleDistance: ", angleDistance)
 
         if angleDistance > self.__angleThreshold or angleDistance < -self.__angleThreshold:
             # if the angle is not the desired one, rotate in place
-            if self.__timeStep != 0:
-                w = angleDistance * self.__proportionalGain + self.__derivativeGain * (angleDistance - self.__prevAngleError) / self.__timeStep
+            if dt != 0:
+                w = angleDistance * self.__proportionalGain + 0 * self.__derivativeGain * (angleDistance - self.__prevAngleError) / dt
             else:
                 w = 0
             v = 0
         else:
             # if the angle is the desired one, move straight
             w = 0
-            if self.__timeStep != 0:
+            if dt != 0:
                 v = self.__linearSpeed
             else:
                 v = 0
         
-        print("THYMIO CONTROL: v: ", v)
-        print("THYMIO CONTROL: w: ", w)
+        self.__prevAngleError = angleDistance
+        
+        # print("THYMIO CONTROL: v: ", v)
+        # print("THYMIO CONTROL: w: ", w)
 
         # clip the angular speed
         w = max(min(w, self.__maxAngularSpeed), -self.__maxAngularSpeed)
