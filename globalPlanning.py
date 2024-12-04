@@ -64,7 +64,7 @@ class GlobalPlanning:
             new_frontier = []
             # For each cell in the current frontier
             for cell in frontier:
-                # Get neighbors of the cell (up, down, left, right)
+                # Get neighbors of the cell (up, down, left, right and diagonals)
                 neighbors = [
                     (cell[0]-1, cell[1]),   # Up
                     (cell[0]+1, cell[1]),   # Down
@@ -76,7 +76,6 @@ class GlobalPlanning:
                     (cell[0]+1, cell[1]+1)  # Down Right
                 ]
                 for neighbor in neighbors:
-                    # Check if neighbor is within bounds and 
                     if (0 <= neighbor[0] < grid.shape[0]) and (0 <= neighbor[1] < grid.shape[1]):# Check if neighbor is within bounds
                         if grid[neighbor] == -4: # Unmarked cell  
                             if matrix[neighbor] != -1: # Not an obstacle
