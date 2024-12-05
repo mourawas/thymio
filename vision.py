@@ -8,16 +8,29 @@ from colorama import Fore, Style
 class Vision:
     def __init__(self, target_height=10, fps=10, threshold=128, tag_size_mm=36, default_image_path=None):
         """
-        Initialize the Vision class with camera settings and a default image.
+        Initialize the Vision class for processing camera input and detecting map features.
 
         Parameters:
-        - fps: Frames per second for controlling capture speed.
-        - default_image_path: Path to an image file to use as default if the camera is not accessible.
+        - target_height (int): Height in pixels for resizing frames while maintaining aspect ratio.
+        - fps (int): Frames per second for controlling processing speed.
+        - threshold (int): Binarization threshold for obstacle detection.
+        - tag_size_mm (int): Size of the AprilTag (side length in millimeters) of the robot for scale calculation.
+        - default_image_path (str): Path to a fallback image if the camera is unavailable or for the test.
+
+        Attributes:
+        - camera: Captures frames from the specified camera.
+        - image: Current raw frame or fallback image.
+        - croped_image: Perspective-corrected and cropped frame.
+        - goal: Detected goal coordinates in the cropped frame.
+        - start: Robot's detected position.
+        - angle: Robot orientation in radians.
+        - pixel_to_mm_scale: Conversion scale from pixels to millimeters.
+        - matrix: Binary matrix of obstacles and free zones on the map.
         """
         self.camera = cv2.VideoCapture(1)
 
         self.target_height = target_height
-        self.tag_size_mm = tag_size_mm  # Size of one side of the tag in centimeters
+        self.tag_size_mm = tag_size_mm
         self.fps = fps
         self.threshold = threshold
         self.frame_delay = 1 / fps
@@ -32,14 +45,6 @@ class Vision:
         if default_image_path:
             self.set_image(cv2.imread(default_image_path))
 
-    def set_image(self, image):
-        """
-        Manually set an image to be processed (useful when the camera is not available).
-        """
-        if image is not None:
-            self.image = image
-        else:
-            raise ValueError("The provided image is None.")
 
     def capture_image(self):
         """
@@ -51,12 +56,19 @@ class Vision:
         else:
             raise Exception("Error: Unable to capture image from the camera.")
 
+    def set_image(self, image):
+        """
+        Manually set an image to be processed (useful when the camera is not available).
+        """
+        if image is not None:
+            self.image = image
+        else:
+            raise ValueError("The provided image is None.")
+
+
     def detect_and_crop(self):
         """
         Detect AprilTags and crop the image based on the detected corners.
-
-        Parameters:
-        - display: If True, display the detected tags on the image.
 
         Returns:
         - cropped_image: The cropped and perspective-transformed image.
@@ -68,15 +80,12 @@ class Vision:
         detector = Detector(families="tagStandard41h12")
         results = detector.detect(gray)
 
-        # Debug: Affichez tous les IDs détectés
-        # print(f"VISION: tag IDs: {[result.tag_id for result in results]}")
 
         # Check if at least 4 tags are detected
         if len(results) < 4:
             print(f"VISION: warning: Only {len(results)} tags detected. Cannot crop the image.")
             self.croped_image = self.image
             return True
-        # print(f"VISION: detected {len(results)} tags.")
 
         # Map tags to corners (top-left, top-right, bottom-left, bottom-right)
         tag_positions = self._parse_tag_positions(results)
@@ -100,7 +109,7 @@ class Vision:
         output_width = 1200
         output_height = 800
         dst = np.array([
-            [0, 0],  # Top-left corner
+            [0, 0], # Top-left corner
             [output_width - 1, 0],  # Top-right corner
             [output_width - 1, output_height - 1],  # Bottom-right corner
             [0, output_height - 1]  # Bottom-left corner
@@ -191,10 +200,9 @@ class Vision:
         if self.start:
             self.start = (int(self.start[0] * scale_x), int(self.start[1] * scale_y))
 
-        # Adjust the pixel-to-cm scale if it exists
-        if self.pixel_to_mm_scale:
-            self.pixel_to_mm_scale *= scale_x  # Assuming uniform scaling
-            return resized_frame
+        # Adjust the pixel-to-cm scale
+        self.pixel_to_mm_scale *= scale_x
+        return resized_frame
         
 
     def find_goal(self):
@@ -239,7 +247,6 @@ class Vision:
             cx = int(moments["m10"] / moments["m00"])  # x-coordinate (horizontal position)
             cy = int(moments["m01"] / moments["m00"])  # y-coordinate (vertical position)
             self.goal = (cy, cx)  # Store as (row, column) for consistency
-            # print("VISION: goal detected")
         else:
             self.goal = None
             print("VISION: red region detected, but could not calculate center.")
@@ -263,7 +270,7 @@ class Vision:
         # Convert the cropped image to grayscale for tag detection
         gray_image = cv2.cvtColor(self.croped_image, cv2.COLOR_BGR2GRAY)
         
-        # Detect 'tag36h11' tags
+        # Detect the robot's tags
         detector = Detector(families="tag36h11")
         results = detector.detect(gray_image)
 
@@ -284,7 +291,6 @@ class Vision:
         apparent_size_pixels = (dist_top + dist_right + dist_bottom + dist_left) / 4
 
         self.pixel_to_mm_scale = apparent_size_pixels / self.tag_size_mm
-        #print(f"Scale calculated: {self.pixel_to_cm_scale:.2f} pixels/mm")
 
 
         # Assuming we are interested in the first detected tag (modify if multiple tags exist)
@@ -295,12 +301,10 @@ class Vision:
 
         # Calculate the orientation angle
         # Use two corners (ptA, ptB) to define the orientation
-        ptA = tag.corners[0]  # Corner A
-        ptB = tag.corners[1]  # Corner B (next to A)
+        ptA = tag.corners[0]
+        ptB = tag.corners[1]
         dx, dy = ptB[0] - ptA[0], ptB[1] - ptA[1]
         self.angle = (np.arctan2(dy, dx) - np.pi/2 ) % (2 * np.pi)  # Angle in radians (0 to 2*pi)
-
-        # print(f"VISION: start detected")
 
         # Replace the pixels corresponding to the tag with white in the cropped image
         white_color = (255, 255, 255)
@@ -453,7 +457,7 @@ if __name__ == "__main__":
             vision.display_all()
 
 
-            if cv2.waitKey(1) & 0xFF == ord('q'):  # Close the window when 'q' is pressed
+            if cv2.waitKey(1) & 0xFF == ord('q'):
                 pass
     finally:
         vision.release()
