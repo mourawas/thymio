@@ -1,6 +1,5 @@
 import math
 import numpy as np
-import time
 
 # Kalman class used for the Kalman filter
 
@@ -25,10 +24,10 @@ class Kalman:
         # Observation matrix. Current estimated position (Corresponds to mu in the slides)
         self.E = np.matrix([[0],[0],[0]],dtype= 'float')
 
-        # Transition input matrix. Jacobian of the motion model
+        # Jacobian of the motion model
         self.G = np.matrix([[1,0,0],[0,1,0],[0,0,1]],dtype= 'float')
 
-        # Jacobian of the measurement model. Measurement transformation matrix
+        # Jacobian of the measurement model.
         # Since we measure directly x, y, theta, H is simply an identity matrix
         self.H = np.matrix([[1,0,0],[0,1,0],[0,0,1]],dtype= 'float')
 
@@ -55,9 +54,6 @@ class Kalman:
         # Distance between the two wheels
         self.d = 93.5
 
-        # Delta time 
-        self.lastKalman = time.time_ns()/1e9
-
         # Speed from pwm to mm/s
         # Depends on which thymio
         self.c = 0.3726
@@ -70,14 +66,9 @@ class Kalman:
         self.E[0, 0] = x
         self.E[1, 0] = y
         self.E[2, 0] = theta
-        self.set_lastKalman_time()
 
     def get_state(self):
         return float(self.E[0, 0]), float(self.E[1, 0]), float(self.E[2, 0])
-
-    def set_lastKalman_time(self):
-        self.lastKalman = time.time_ns()/1e9
-
 
     def kalman_prediction(self, L_speed, R_speed, dt):
         
@@ -86,11 +77,7 @@ class Kalman:
         # OUTPUT: None
 
         # Predicts the state of the robot based on the odometry and updates the 
-        # variances of the system.
-        
-        # Time between the last update/prediction and this time
-        #deltaT = time.time_ns()/1e9 - self.lastKalman + 0.2
-        #deltaT = deltaT/1e9 # Convert to seconds
+        # variance of the system
 
         # Update speeds of the robot
         self.U = np.matrix([[L_speed],[R_speed]],dtype= 'float')
@@ -113,9 +100,6 @@ class Kalman:
         
         # Update the variance of the system APA'+R (slide 44)
         self.P = self.A @ self.P @ self.A.T + R
-        
-        # Update the time of the last kalman done to find deltaT
-        self.lastKalman = time.time_ns()/1e9
 
     def kalman_update(self, measurement):
 
@@ -123,7 +107,7 @@ class Kalman:
         
         # OUTPUT: None, modifies measurement
 
-        # update the state of the robot and  the variances of the system 
+        # Update the state of the robot and the variances of the system 
         # with camera measurements
         
         # Measured state matrix
@@ -143,6 +127,3 @@ class Kalman:
         # Update of the variance of the system (slide 48)
         I = np.eye(3)
         self.P = np.dot((I-np.dot(K,self.H)),self.P)
-        
-        # Update the time of the last kalman done to find deltaT
-        self.lastKalman = time.time_ns()/1e9
