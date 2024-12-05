@@ -425,6 +425,7 @@ class Vision:
         cv2.destroyAllWindows()
 
 
+# Test Vision class (without loop)
 # if __name__ == "__main__":
 #     try:
 #         image_path1 = "images/IMG_7018.jpeg"
