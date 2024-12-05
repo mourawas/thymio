@@ -73,6 +73,43 @@ class Plotter:
         plt.show()
 
     def plot_trajectory(self, row_trajectory, col_trajectory):
+        # plot the trajectory
+        rows, cols = self.map.shape
+        plt.figure(figsize=(10, 10))
+        plt.imshow(self.map, cmap='gray', origin='lower')
+        path_rows, path_cols = zip(*self.path)
+        plt.scatter(path_cols, path_rows, color='red', marker='s', label='Path')
+        plt.text(self.start[1], self.start[0], 'S', color='red', fontsize=26, fontweight='bold', ha='center', va='center', label='Start')
+        plt.text(self.goal[1], self.goal[0], 'G', color='red', fontsize=26, fontweight='bold', ha='center', va='center', label='Goal')
+        plt.plot(col_trajectory, row_trajectory, color='green', marker='o', label='Trajectory')
+        plt.xticks(range(0, cols, 5))
+        plt.yticks(range(0, rows, 5))
+        plt.grid(color='gray', linestyle='--', linewidth=0.5)
+        plt.gca().invert_yaxis()
+        plt.title("Grid Map with Trajectory")
+        plt.legend()
+        plt.show()
+
+    def plot_prediction(self, row_pred, col_pred):
+        # plot the kalman prediction
+        rows, cols = self.map.shape
+        plt.figure(figsize=(10, 10))
+        plt.imshow(self.map, cmap='gray', origin='lower')
+        path_rows, path_cols = zip(*self.path)
+        plt.scatter(path_cols, path_rows, color='red', marker='s', label='Path')
+        plt.text(self.start[1], self.start[0], 'S', color='red', fontsize=26, fontweight='bold', ha='center', va='center', label='Start')
+        plt.text(self.goal[1], self.goal[0], 'G', color='red', fontsize=26, fontweight='bold', ha='center', va='center', label='Goal')
+        plt.plot(col_pred, row_pred, color='blue', marker='o', label='Kalman Prediction')
+        plt.xticks(range(0, cols, 5))
+        plt.yticks(range(0, rows, 5))
+        plt.grid(color='gray', linestyle='--', linewidth=0.5)
+        plt.gca().invert_yaxis()
+        plt.title("Grid Map with Kalman Prediction")
+        plt.legend()
+        plt.show()
+
+    """
+    def plot_trajectory(self, row_trajectory, col_trajectory):
         # plot the trajectory on the map
         rows, cols = self.map.shape
         plt.figure(figsize=(10, 10))
@@ -91,7 +128,8 @@ class Plotter:
         plt.title("Grid Map with Trajectory")
         plt.legend()
         plt.show()
-
+    """
+        
     def plot_kalman_prediction(self, x_pred, y_pred, angle_pred):
         # plot the kalman prediction
         plt.plot(x_pred, y_pred, label='Kalman Prediction')
