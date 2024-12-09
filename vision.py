@@ -103,9 +103,6 @@ class Vision:
 
 
 
-        self.calculate_scale(corners)   # Calculate the scale (pixels per centimeter)
-
-
         output_width = 1200
         output_height = 800
         dst = np.array([
@@ -152,31 +149,6 @@ class Vision:
             "bottom_left": bottom_tags[0][1],
             "bottom_right": bottom_tags[1][1]
         }
-
-    def calculate_scale(self, corners):
-        """
-        Calculate the scale (pixels per centimeter) based on detected tag corners.
-
-        Parameters:
-        - corners: Array of tag corners in the form [(x1, y1), (x2, y2), ...]
-
-        Updates:
-        - self.pixel_to_cm_scale: Number of pixels per centimeter.
-        """
-        if corners.shape[0] < 4:
-            raise ValueError("Not enough corners to calculate scale.")
-
-        # Calculate distances between adjacent corners
-        dist_top = np.linalg.norm(corners[0] - corners[1])  # Top side (top_left to top_right)
-        dist_right = np.linalg.norm(corners[1] - corners[2])  # Right side (top_right to bottom_right)
-        dist_bottom = np.linalg.norm(corners[2] - corners[3])  # Bottom side (bottom_right to bottom_left)
-        dist_left = np.linalg.norm(corners[3] - corners[0])  # Left side (bottom_left to top_left)
-
-        # Average the distances to account for potential perspective distortion
-        avg_dist = (dist_top + dist_right + dist_bottom + dist_left) / 4
-
-        # Compute the scale (pixels per millimeter)
-        self.pixel_to_mm_scale = avg_dist / self.tag_size_mm
 
 
     def _resize_image(self, frame):
