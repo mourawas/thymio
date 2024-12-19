@@ -16,10 +16,10 @@ The robot operates on a custom-designed map with:
 The project demonstrates a working system capable of navigating through a predefined environment while avoiding obstacles and reaching the goal. There are both predefined static obstacles and dynamic obstacles which can be placed anywhere around the robot. The robot can be kidnapped and will recompute its path correctly, and the camera can be obstructed after the initialization without affector the robot's behaviour.
 
 ## Group Members
-- **Rocca Federico** (390233) - MSc Robotics  
-- **Rashidi Mohammad Massi** (394309) - MSc CyberSecurity  
-- **Rawas Mouhamad Bilal** (345489) - MSc Robotics  
-- **Schär Mikaël Joël Michel** (325388) - MSc Robotics  
+- **Rocca Federico** - MSc Robotics  
+- **Rashidi Mohammad Massi** - MSc CyberSecurity  
+- **Rawas Mouhamad Bilal** - MSc Robotics  
+- **Schär Mikaël Joël Michel** - MSc Robotics  
 
 ## Requirements
 Install dependencies with:
